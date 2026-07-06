@@ -1,0 +1,63 @@
++ umask 007
++ NGPU=1
++ MASTER_PORT=29511
++ PORT=1116
++ LOG_RANK=2
++ TORCHFT_LIGHTHOUSE=http://localhost:29520
++ CONFIG_NAME=clean_va_train
++ PYTHON_BIN=/root/miniconda3/envs/lingbot/bin/python
++ export CUDA_VISIBLE_DEVICES=2,3
++ CUDA_VISIBLE_DEVICES=2,3
++ overrides=
++ '[' 0 -ne 0 ']'
++ export WANDB_API_KEY=wandb_v1_aJjIp4OZ8Z5nyiluAGhoHlXiFrb
++ WANDB_API_KEY=wandb_v1_aJjIp4OZ8Z5nyiluAGhoHlXiFrb
++ export WANDB_BASE_URL=https://api.wandb.ai
++ WANDB_BASE_URL=https://api.wandb.ai
++ export WANDB_TEAM_NAME=gotobcn
++ WANDB_TEAM_NAME=gotobcn
++ export WANDB_PROJECT=test2
++ WANDB_PROJECT=test2
++ num_gpu=1
++ master_port=29511
++ log_rank=2
++ torchft_lighthouse=http://localhost:29520
++ config_name=clean_va_train
++ export TOKENIZERS_PARALLELISM=false
++ TOKENIZERS_PARALLELISM=false
++ '[' '!' -x /root/miniconda3/envs/lingbot/bin/python ']'
++ /root/miniconda3/envs/lingbot/bin/python -c 'import torch'
+++ /root/miniconda3/envs/lingbot/bin/python -c 'import torch; print(torch.cuda.device_count())'
++ visible_gpu_count=2
++ '[' 2 -lt 1 ']'
++ echo 'Using PYTHON_BIN=/root/miniconda3/envs/lingbot/bin/python'
+Using PYTHON_BIN=/root/miniconda3/envs/lingbot/bin/python
++ echo CUDA_VISIBLE_DEVICES=2,3
+CUDA_VISIBLE_DEVICES=2,3
++ echo 'Visible GPU count=2, requested=1'
+Visible GPU count=2, requested=1
++ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
++ PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
++ export TORCHFT_LIGHTHOUSE=http://localhost:29520
++ TORCHFT_LIGHTHOUSE=http://localhost:29520
++ python wan_va/train.py --config-name clean_va_train
+2026-04-08 15:31:00,467 - root - INFO - Using config: clean_va_train
+2026-04-08 15:31:00,467 - root - INFO - World size: 1, Local rank: 0
+2026-04-08 15:31:00,467 - root - INFO - Loading models...
+2026-04-08 15:31:00,467 - root - INFO - Loading transformer...
+-------world_size:1---------
+******************** /root/.cache/modelscope/hub/models/robbyant/lingbot-va-base/transformer
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:01,  1.99it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  2.02it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:01<00:00,  2.86it/s]
+Some weights of the model checkpoint at /root/.cache/modelscope/hub/models/robbyant/lingbot-va-base/transformer were not used when initializing WanTransformer3DModel: 
+ ['patch_embedding.weight, patch_embedding.bias']
+2026-04-08 15:31:01,636 - root - INFO - Setting up activation checkpointing ...
+2026-04-08 15:31:01,637 - root - INFO - Setting up FSDP...
+2026-04-08 15:31:05,526 - root - INFO - Setting up datasets...
+2026-04-08 15:31:09,227 - root - INFO - Starting training for 20000 steps...
+length of repo_list: 5
+******************** /data/.cache/datasets/lerobot/robotwin/clean_tiny/move_stapler_pad-demo_clean_collect_200-50 ********************
+******************** /data/.cache/datasets/lerobot/robotwin/clean_tiny/put_bottles_dustbin-piper_clean_50-50 ********************
+******************** /data/.cache/datasets/lerobot/robotwin/clean_tiny/hanging_mug-demo_clean_collect_200-50 ********************
+******************** /data/.cache/datasets/lerobot/robotwin/clean_tiny/turn_switch-demo_clean_collect_200-50 ********************
+******************** /data/.cache/datasets/lerobot/robotwin/clean_tiny/open_microwave-demo_clean_collect_200-50 ********************
+Training:   0%|          | 0/250 [00:00<?, ?it/s]Training:  13%|█▎        | 32/250 [02:04<14:07,  3.89s/it, latent_loss=0.3278, action_loss=0.1868, aligment_loss=0.0000, step=0, grad_norm=1.53, lr=1.00e-06]Training:  26%|██▌       | 64/250 [03:25<09:57,  3.21s/it, latent_loss=0.3117, action_loss=0.1981, aligment_loss=0.0000, step=1, grad_norm=1.65, lr=2.00e-06]
