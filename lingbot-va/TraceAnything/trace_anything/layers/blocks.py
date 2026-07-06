@@ -22,13 +22,13 @@
 
 
 import collections.abc
-from itertools import repeat
 import math
+from itertools import repeat
 
 import torch
 import torch.nn as nn
-from torch.nn.functional import scaled_dot_product_attention
 from torch.nn.attention import SDPBackend
+from torch.nn.functional import scaled_dot_product_attention
 
 
 def _ntuple(n):

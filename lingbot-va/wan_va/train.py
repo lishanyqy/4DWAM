@@ -3,63 +3,57 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
 import wandb
 
 os.environ.setdefault("HF_DATASETS_CACHE", "/tmp/hf_datasets_cache")
 
+import json
+
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, DistributedSampler
-from tqdm import tqdm
+from safetensors.torch import load_file, save_file
 from torch.distributed.checkpoint.state_dict import (
+    StateDictOptions,
     get_model_state_dict,
     get_optimizer_state_dict,
     set_optimizer_state_dict,
-    StateDictOptions,
 )
-from safetensors.torch import save_file, load_file
-import json
+from torch.utils.data import DataLoader, DistributedSampler
+from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+import gc
+import pdb
+from datetime import datetime
+
 from configs import VA_CONFIGS
-from distributed.fsdp import shard_model, apply_ac
-from distributed.util import (
-    _configure_model, 
-    init_distributed, 
-    dist_mean, 
-    dist_max
-)
+from dataset import MultiLatentLeRobotDataset
+from distributed.fsdp import apply_ac, shard_model
+from distributed.util import _configure_model, dist_max, dist_mean, init_distributed
 from einops import rearrange
+from modules.alignment import (
+    destination_loss_safe,
+    motion_incremental_alignment,
+    motion_incremental_alignment_tokenwise,
+    unified_dest_and_motion,
+)
 from modules.utils import (
     load_transformer,
 )
-
-from modules.alignment import (
-    future_alignment_loss,
-    motion_incremental_alignment,
-    motion_incremental_alignment_tokenwise,
-    destination_loss_safe,
-    unified_dest_and_motion,
-)
 from utils import (
-    init_logger, 
-    logger, 
-    get_mesh_id, 
-    sample_timestep_id,
-    data_seq_to_patch,
-    warmup_constant_lambda,
     FlowMatchScheduler,
     collate_get_mask,
-    modelswitch
+    data_seq_to_patch,
+    get_mesh_id,
+    init_logger,
+    logger,
+    modelswitch,
+    sample_timestep_id,
+    warmup_constant_lambda,
 )
-from dataset import MultiLatentLeRobotDataset
-import gc
-# from remote_pdb import RemotePdb
-import torch.multiprocessing as mp
-import pdb
-from datetime import datetime
 
 FIRST = True
 

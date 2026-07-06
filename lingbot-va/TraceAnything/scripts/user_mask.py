@@ -22,9 +22,17 @@ and stores preds[i]["fg_mask_user"] in <scene>/output.pt.
 """
 
 import sys, pathlib; sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-import os, argparse, shutil, tempfile, inspect
+import argparse
+import inspect
+import os
+import shutil
+import tempfile
 from typing import Dict, List, Optional
-import numpy as np, torch, cv2
+
+import cv2
+import numpy as np
+import torch
+
 
 def dilate_mask(mask: np.ndarray, ksize: int = 3, iterations: int = 2) -> np.ndarray:
     kernel = np.ones((ksize, ksize), np.uint8)
@@ -79,6 +87,7 @@ def ask_points(frame_bgr:np.ndarray, preview_dir:str)->np.ndarray:
         if input("Retry or quit? [r]/q: ").strip().lower().startswith("q"): raise SystemExit(0)
 
 from sam2.build_sam import build_sam2_video_predictor
+
 
 def run_propagation(model_cfg:str, ckpt_path:str, jpg_dir:str, points_xy1:np.ndarray,
                     ann_frame_idx:int=0, ann_obj_id:int=1)->List[np.ndarray]:

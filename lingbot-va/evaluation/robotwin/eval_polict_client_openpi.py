@@ -1,11 +1,12 @@
-import sys
+import inspect
 import os
 import subprocess
+import sys
+from pathlib import Path
+
+import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import cv2
-from pathlib import Path
-import inspect
 
 robowin_root = Path("/root/workspace/lishan/RoboTwin")
 if str(robowin_root) not in sys.path:
@@ -13,40 +14,37 @@ if str(robowin_root) not in sys.path:
 
 
 import os
+
 os.chdir(robowin_root)
 
-from envs import CONFIGS_PATH
-from envs.utils.create_actor import UnStableError
-
-import numpy as np
-from pathlib import Path
-from collections import deque
-import traceback
-
-import yaml
-from datetime import datetime
-import importlib
 import argparse
+import importlib
+import json
 import pdb
-# from evaluation.robotwin.geometry import euler2quat
-from .geometry import euler2quat
-import numpy as np
-
-from description.utils.generate_episode_instructions import *
 import traceback
+from collections import deque
+from datetime import datetime
+from pathlib import Path
 
 import imageio
 import numpy as np
-from pathlib import Path
+import yaml
+from description.utils.generate_episode_instructions import *
+from envs import CONFIGS_PATH
+from envs.utils.create_actor import UnStableError
 from scipy.spatial.transform import Rotation as R
-import json
-from pathlib import Path
+
+from logbooklbt.logbooker import Attender
+
+# from evaluation.robotwin.geometry import euler2quat
+from .geometry import euler2quat
+
+# from evaluation.robotwin.test_render import Sapien_TEST
+from .test_render import Sapien_TEST
 
 # from evaluation.robotwin.websocket_client_policy import WebsocketClientPolicy
 from .websocket_client_policy import WebsocketClientPolicy
-# from evaluation.robotwin.test_render import Sapien_TEST
-from .test_render import Sapien_TEST
-from logbooklbt.logbooker import Attender
+
 
 def write_json(data: dict, fpath: Path) -> None:
     """Write data to a JSON file.

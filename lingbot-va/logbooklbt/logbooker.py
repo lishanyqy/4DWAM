@@ -1,11 +1,8 @@
-from logbook import Logger,FileHandler,NOTSET
-from logbook.more import ColorizedStderrHandler
-from pathlib import Path
-# import const.constants as const
-from logbook._termcolors import colorize
 import os
 import sys
-from logbook import(
+from pathlib import Path
+
+from logbook import (
     CRITICAL,
     DEBUG,
     ERROR,
@@ -14,7 +11,13 @@ from logbook import(
     NOTSET,
     TRACE,
     WARNING,
+    FileHandler,
+    Logger,
 )
+
+# import const.constants as const
+from logbook._termcolors import colorize
+from logbook.more import ColorizedStderrHandler
 
 route = 'fedlog/logfiles/client.log'
 LOG_FILE_FORMAT = '({record.level_name})[{record.time:%Y-%m-%d %H:%M:%S}] {record.filename}:{record.lineno} {record.module}: {record.message}'

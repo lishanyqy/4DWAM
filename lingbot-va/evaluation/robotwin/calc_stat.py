@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def compute_success_rates(root_dir: str, true_suffix="True.mp4", false_suffix="False.mp4"):
     root = Path(root_dir)
     if not root.exists():

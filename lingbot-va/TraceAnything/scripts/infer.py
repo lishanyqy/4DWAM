@@ -22,21 +22,22 @@ Run inference on all scenes and save:
 Masks are computed from ctrl-pt variance + smart Otsu.
 """
 
-import sys, pathlib
+import pathlib
+import sys
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-import os
-import cv2
-import time
 import argparse
-from typing import List, Dict
+import os
+import time
+from typing import Dict, List
 
+import cv2
 import numpy as np
 import torch
-from PIL import Image
 import torchvision.transforms as tvf
 from omegaconf import OmegaConf
-
+from PIL import Image
 from trace_anything.trace_anything import TraceAnything
 
 

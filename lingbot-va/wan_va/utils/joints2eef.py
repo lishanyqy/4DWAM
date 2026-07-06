@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def get_link_by_name(robot, name):
     for link in robot.get_links():
         if link.get_name() == name:

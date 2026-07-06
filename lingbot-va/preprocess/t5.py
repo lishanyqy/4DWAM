@@ -6,7 +6,6 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from tmp_tokenizers import HuggingfaceTokenizer
 
 __all__ = [

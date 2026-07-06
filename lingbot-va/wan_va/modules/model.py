@@ -1,6 +1,8 @@
 # Copyright 2024-2025 The Robbyant Team Authors. All rights reserved.
 import math
 from copy import deepcopy
+from functools import partial
+from typing import Callable, ClassVar
 
 import torch
 import torch.nn as nn
@@ -15,16 +17,14 @@ from diffusers.models.embeddings import (
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.models.normalization import FP32LayerNorm
 from einops import rearrange
-from typing import Callable, ClassVar
 from torch.nn.attention.flex_attention import (
-    _mask_mod_signature,
     BlockMask,
+    _mask_mod_signature,
+    and_masks,
     create_block_mask,
     flex_attention,
-    and_masks,
-    or_masks
+    or_masks,
 )
-from functools import partial
 
 try:
     from flash_attn_interface import flash_attn_func
@@ -746,12 +746,10 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
         self.scale_shift_table = nn.Parameter(
             torch.randn(1, 2, inner_dim) / inner_dim**0.5)
     
-    def _init_trace_parameters(self, trace_dim = 4096, target_dim = 2048, K_frames = 1, align_layer = 20,data_type = torch.float32):
-        # self.trace_hidden_mlp = nn.Linear(
-        #     trace_dim,
-        #     c,
-        #     dtype=data_type,
-        # )
+    def _init_trace_parameters(self, trace_dim = 4096, target_dim = 2048, align_layer = 20,data_type = torch.float32):
+        '''
+        4D WAM initialization
+        '''
         self.trace_proj = nn.Sequential(
             nn.Linear(trace_dim, self.inner_dim, dtype=data_type,),
             nn.GELU(),
@@ -762,7 +760,6 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
             nn.GELU(),
             nn.Linear(target_dim, target_dim, dtype=data_type,),
         )
-        self.K_frames = K_frames
         self.align_layer = align_layer
 
     def clear_cache(self, cache_name):
@@ -908,7 +905,7 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
                       condition_action_hidden_states.shape[1],
                       padded_length]
         
-        # noisy_latents: (1,48,3,24,20)
+        # noisy_latents: (1, 48, 3, 24, 20)
         # action_dict noisy_latents : (1, 30, 3, 88, 1)
         # padded_length = 32
         # chunk_size = 3
@@ -958,8 +955,7 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
                                              '1 (b l) c -> b l c',
                                              b=batch_size)  #
 
-        # cos_sim = F.cosine_similarity(align_hidden_states, h_new, dim=-1) / temperature
-        # loss = 1 - cos_sim.mean()
+        # ----------------Align dit repr with TraceAnything features----------------
         if 'trace' in input_dict:
             align_hidden_states = rearrange(
                 align_hidden_states,
@@ -969,7 +965,7 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
             raw_trace_hidden_states = trace_hidden_states
             align_hidden_states = self.align_repr_proj(align_hidden_states)
             trace_hidden_states = self.trace_proj(trace_hidden_states)
-            # trace_loss = alignment_module(align_hidden_states, trace_hidden_states, K = self.K_frames, Tokens = tokens)
+            
             trace_loss = alignment_module(
                 align_hidden_states,
                 trace_hidden_states,
@@ -1072,17 +1068,6 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
     def set_requires_gradient_sync(self,should_asyc = False):
         if hasattr(self, "require_backward_grad_sync"):
             self.require_backward_grad_sync = should_asyc
-
-# class LingbotTraceModel(nn.Module):
-#     def __init__(
-#         self,
-#         transformer,
-#     ):
-#         super().__init__()
-#         self.3Dtransformer = transformer
-
-#     def forward(self):
-#         pass
 
 if __name__ == '__main__':
     model = WanTransformer3DModel(patch_size=[1, 2, 2],

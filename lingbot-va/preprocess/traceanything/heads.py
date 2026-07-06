@@ -14,9 +14,11 @@
 
 # trace_anything/heads.py
 from typing import List
+
 import torch
 import torch.nn as nn
 from einops import rearrange
+
 from .layers.dpt_block import DPTOutputAdapter  # 本地化
 
 

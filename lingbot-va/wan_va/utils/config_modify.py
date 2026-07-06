@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def modelswitch(path,is_train = False):
     path = os.path.join(path,'config.json')
     with open(path,'r') as tp:

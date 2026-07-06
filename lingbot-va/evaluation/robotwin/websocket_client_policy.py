@@ -2,10 +2,12 @@ import logging
 import time
 from typing import Dict, Optional, Tuple
 
-from typing_extensions import override
 import websockets.sync.client
+from typing_extensions import override
+
 # from .msgpack_numpy import Packer, unpackb
 from .msgpack_numpy import Packer, unpackb
+
 
 class WebsocketClientPolicy:
     """Implements the Policy interface by communicating with a server over websocket.
@@ -74,9 +76,10 @@ class WebsocketClientPolicy:
 
 if __name__ == "__main__":
     policy_on_device = WebsocketClientPolicy(port=8000)
-    import torch
     import numpy as np
+    import torch
     from PIL import Image
+
     from .image_tools import convert_to_uint8
     device = torch.device("cuda")
 

@@ -4,6 +4,7 @@ import string
 
 import ftfy
 import regex as re
+
 try:
     from transformers import AutoTokenizer
 except:

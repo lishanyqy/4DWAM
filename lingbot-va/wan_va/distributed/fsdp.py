@@ -2,11 +2,11 @@
 import gc
 
 import torch
-from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy
-
 from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
     checkpoint_wrapper as ptd_checkpoint_wrapper,
 )
+from torch.distributed.fsdp import MixedPrecisionPolicy, fully_shard
+
 
 def apply_ac(model):
     """Apply activation checkpointing to the model."""

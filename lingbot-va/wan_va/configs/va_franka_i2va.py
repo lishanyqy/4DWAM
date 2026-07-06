@@ -1,5 +1,6 @@
 # Copyright 2024-2025 The Robbyant Team Authors. All rights reserved.
 from easydict import EasyDict
+
 from .va_franka_cfg import va_franka_cfg
 
 va_franka_i2va_cfg = EasyDict(__name__='Config: VA franka i2va')

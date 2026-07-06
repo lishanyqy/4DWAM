@@ -35,35 +35,35 @@ your_dataset/
 """
 
 import argparse
+import io
 import json
 import multiprocessing as mp
+import os
+import pdb
+import subprocess
 import traceback
 from pathlib import Path
-from typing import Dict, Any, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
-import pdb
-import os
+import av
+import cv2
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from PIL import Image
-import io
 import vae2_2
+from omegaconf import OmegaConf
+from PIL import Image
+from t5 import T5EncoderModel
+from torchvision.transforms.functional import resize
+from torchvision.utils import save_image
+from tqdm import tqdm
+from traceanything import TraceAnything
+
 # from wan.vae import WanTI2V_VAE
 # from wan.text_encoder import WanTextEncoder
 from transformers import AutoTokenizer
-from t5 import T5EncoderModel
-import torch
-from torchvision.transforms.functional import resize
-from torchvision.utils import save_image
-import cv2
-import av
-import subprocess
-from torchvision.transforms.functional import resize
-from omegaconf import OmegaConf
-from traceanything import TraceAnything
-from tqdm import tqdm
+
 # =================== Wan2.2 相关：你需要填的 TODO ===================
 
 # image_keys = {
@@ -780,12 +780,13 @@ def launch_parallel(
             )
 
 def main():
-    default_dataset_root = "/data/.cache/datasets/lerobot/robotwin/clean_tiny"
-    default_model_root = "/root/.cache/models/trace-anything/"
+    default_dataset_root = "/data/.cache/datasets/lerobot/robotwin/comp_trace/robotwin_ds/lerobot_robotwin_eef_clean_50/"
+    default_model_root = "/data/.cache/models/trace-anything/"
     default_cfg_path = Path(__file__).resolve().parent / "traceanything" / "configs" / "eval.yaml"
     parser = argparse.ArgumentParser(
         description="Extract traceanything latents from LeRobot parquet episodes into parquet latents."
     )
+    
     parser.add_argument(
         "--dataset-root",
         type=str,

@@ -35,25 +35,29 @@ your_dataset/
 """
 
 import argparse
+import io
 import json
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
-
 import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from PIL import Image
-import io
 import vae2_2
+
 # from wan.vae import WanTI2V_VAE
 # from wan.text_encoder import WanTextEncoder
-from transformers import AutoTokenizer
+from diffusers import AutoencoderKLWan
+from PIL import Image
 from t5 import T5EncoderModel
-import torch
 from torchvision.transforms.functional import resize
 from torchvision.utils import save_image
+from transformers import AutoTokenizer, T5TokenizerFast, UMT5EncoderModel
+
+from wan_va.modules.utils import WanVAEStreamingWrapper
+
 # =================== Wan2.2 相关：你需要填的 TODO ===================
 
 # image_keys = {
@@ -68,6 +72,146 @@ image_keys = {
     'observation.images.cam_right_wrist': (128,160),
 }
 
+class HFWanVAEWrapper:
+    """Adapter for diffusers Wan VAE dirs, returning the old [C, T, H, W] latent."""
+
+    def __init__(
+        self,
+        vae_path,
+        device: torch.device,
+        dtype=torch.bfloat16,
+        subfolder: Optional[str] = None,
+    ):
+        self.device = device
+        self.dtype = dtype
+        load_kwargs = {"torch_dtype": dtype}
+        if subfolder is not None:
+            load_kwargs["subfolder"] = subfolder
+        self.vae = AutoencoderKLWan.from_pretrained(
+            str(vae_path),
+            **load_kwargs,
+        ).to(device).eval()
+        self.streaming_vae = WanVAEStreamingWrapper(self.vae)
+
+    def encode(self, videos):
+        if not isinstance(videos, list):
+            raise TypeError("videos should be a list")
+
+        latents = []
+        latents_mean = torch.tensor(
+            self.vae.config.latents_mean,
+            device=self.device,
+            dtype=torch.float32,
+        ).view(1, -1, 1, 1, 1)
+        latents_std = torch.tensor(
+            self.vae.config.latents_std,
+            device=self.device,
+            dtype=torch.float32,
+        ).view(1, -1, 1, 1, 1)
+
+        for video in videos:
+            self.streaming_vae.clear_cache()
+            video = video.unsqueeze(0).to(device=self.device, dtype=self.dtype)
+            video = video * 2.0 - 1.0
+            enc_out = self.streaming_vae.encode_chunk(video)
+            mu, _ = torch.chunk(enc_out, 2, dim=1)
+            mu_norm = ((mu.float() - latents_mean) * (1.0 / latents_std)).to(mu)
+            latents.append(mu_norm.float().squeeze(0))
+        return latents
+
+
+class HFTextEncoderWrapper:
+    """Adapter for HF text_encoder/tokenizer dirs, matching T5EncoderModel.__call__."""
+
+    def __init__(
+        self,
+        models_root: Path,
+        text_length: int,
+        device: torch.device,
+        dtype=torch.bfloat16,
+    ):
+        self.text_length = text_length
+        self.device = device
+        self.dtype = dtype
+
+        text_encoder_path, text_encoder_subfolder = _resolve_hf_component_path(
+            models_root,
+            "text_encoder",
+        )
+        tokenizer_path, tokenizer_subfolder = _resolve_hf_tokenizer_path(models_root)
+
+        tokenizer_kwargs = {}
+        if tokenizer_subfolder is not None:
+            tokenizer_kwargs["subfolder"] = tokenizer_subfolder
+        self.tokenizer = T5TokenizerFast.from_pretrained(
+            str(tokenizer_path),
+            **tokenizer_kwargs,
+        )
+        text_encoder_kwargs = {"torch_dtype": dtype}
+        if text_encoder_subfolder is not None:
+            text_encoder_kwargs["subfolder"] = text_encoder_subfolder
+        self.model = UMT5EncoderModel.from_pretrained(
+            str(text_encoder_path),
+            **text_encoder_kwargs,
+        ).to(device).eval()
+        self.model.requires_grad_(False)
+
+    def __call__(self, texts, device):
+        if isinstance(texts, str):
+            texts = [texts]
+        tokens = self.tokenizer(
+            texts,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True,
+            max_length=self.text_length,
+            add_special_tokens=True,
+        )
+        input_ids = tokens.input_ids.to(device)
+        attention_mask = tokens.attention_mask.to(device)
+        seq_lens = attention_mask.gt(0).sum(dim=1).long()
+        context = self.model(input_ids, attention_mask).last_hidden_state
+        return [u[:v] for u, v in zip(context, seq_lens)]
+
+
+def _has_hf_component_layout(models_root: Path) -> bool:
+    return (models_root / "vae").is_dir() and (models_root / "text_encoder").is_dir()
+
+
+def _looks_like_hf_repo_id(models_root) -> bool:
+    models_root_str = str(models_root)
+    return (
+        not Path(models_root_str).exists()
+        and "/" in models_root_str
+        and not models_root_str.startswith(("/", "./", "../"))
+    )
+
+
+def _resolve_hf_component_path(models_root, component: str):
+    if _looks_like_hf_repo_id(models_root):
+        return str(models_root), component
+    return Path(models_root) / component, None
+
+
+def _resolve_hf_tokenizer_path(models_root):
+    if _looks_like_hf_repo_id(models_root):
+        return str(models_root), "tokenizer"
+
+    models_root = Path(models_root)
+    candidates = [
+        models_root / "tokenizer",
+        models_root / "google" / "umt5-xxl",
+        models_root / "text_encoder",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate, None
+    raise FileNotFoundError(
+        "Could not find tokenizer for HF model layout. Expected one of: "
+        + ", ".join(str(p) for p in candidates)
+    )
+
+
 def build_wan2_2_components(models_root: Path,text_length, device: torch.device):
     """
    
@@ -76,6 +220,23 @@ def build_wan2_2_components(models_root: Path,text_length, device: torch.device)
     示意伪代码（不要直接运行）:
     ----------------------------------------------------------------
     """
+    if _has_hf_component_layout(models_root):
+        vae = HFWanVAEWrapper(models_root / "vae", device=device)
+        text_encoder = HFTextEncoderWrapper(
+            models_root=models_root,
+            text_length=text_length,
+            device=device,
+        )
+        return vae, text_encoder
+    if _looks_like_hf_repo_id(models_root):
+        vae = HFWanVAEWrapper(str(models_root), device=device, subfolder="vae")
+        text_encoder = HFTextEncoderWrapper(
+            models_root=str(models_root),
+            text_length=text_length,
+            device=device,
+        )
+        return vae, text_encoder
+
     # raise NotImplementedError("请在 build_wan2_2_components 里加载 Wan2.2 模型")
     # vae_ckpt = models_root / "Wan2.2-TI2V-5B" / "Wan2.2_VAE.pth"
     vae_ckpt = models_root / "Wan2.2_VAE.pth"
@@ -448,7 +609,7 @@ def process_dataset(
 
 
 def main():
-    home_path = '/cpfs01/projects-HDD/cfff-377aad6b032c_HDD/chenshuai/wenxuan/'
+    home_path = 'data_root_path'
     parser = argparse.ArgumentParser(
         description="Extract Wan2.2 latents from LeRobot parquet episodes into parquet latents."
     )
@@ -464,7 +625,7 @@ def main():
         type=str,
         # required=True,
         default = os.path.join(home_path,'.cache/modelscope/Wan-AI/Wan2.2-TI2V-5B/'),
-        help="Wan2.2 directory",
+        help="Wan2.2 directory, local HF model root containing vae/text_encoder/tokenizer, or HF repo id",
     )
     parser.add_argument(
         "--image-column",
@@ -554,17 +715,7 @@ def debug_images_columns(
         img = Image.open(io.BytesIO(imgs[122])).convert("RGB")
         # )
         img.save(f'{key}.png')
-        # print(len(imgs), arr.shape)
-        # if arr.ndim == 3 and arr.shape[-1] == 3:   # [H, W, 3]
-        #     arr = np.transpose(arr, (2, 0, 1))     # -> [3, H, W]
-        # elif arr.ndim == 3 and arr.shape[0] == 3:  # already [3, H, W]
-        #     pass
-        # frames.append(torch.from_numpy(arr).float() /255.0)
 
-    # video = torch.from_numpy(np.stack(frames, axis=0)).float() / 255.0  # [T,3,H,W]
-    # T, _, H, W = video.shape
-    # T,_,H,W = len(frames), frames[0].shape[0],frames[0].shape[1],frames[0].shape[2]
-    # return frames, T, H, W
 
     
 

@@ -1,33 +1,33 @@
 # Copyright 2024-2025 The Robbyant Team Authors. All rights reserved.
+import os
+import pdb
+from collections.abc import Callable
+from functools import partial
+from multiprocessing import Pool
+from pathlib import Path
+
+import datasets
+import numpy as np
+import packaging.version
+import pandas as pd
+import torch
+from datasets import concatenate_datasets, load_dataset
+from einops import rearrange
+from lerobot.constants import HF_LEROBOT_HOME
+from lerobot.datasets.compute_stats import compute_episode_stats  # aggregate_stats,
 from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
 from lerobot.datasets.utils import (
     get_episode_data_index,
     get_safe_version,
-    hf_transform_to_torch
+    hf_transform_to_torch,
 )
-import packaging.version
-from lerobot.datasets.compute_stats import (
-    # aggregate_stats, 
-    compute_episode_stats
-)
-import numpy as np
-from pathlib import Path
-from collections.abc import Callable
-import os
-from tqdm import tqdm
-from multiprocessing import Pool
-from functools import partial
-import torch
-from einops import rearrange
-from torch.utils.data import DataLoader
 from scipy.spatial.transform import Rotation as R
-from lerobot.constants import HF_LEROBOT_HOME
-import pdb
-import datasets
-from datasets import concatenate_datasets, load_dataset
-import pandas as pd
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
 # from evaluation.robotwin.geometry import euler2quat
 from utils.geometry import euler2quat
+
 # from datasets.utils import hf_transform_to_torch
 # from remote_pdb import RemotePdb
 
@@ -230,12 +230,6 @@ class LatentLeRobotDataset(LeRobotDataset):
             episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
             self.stats = aggregate_stats(episodes_stats)
         
-        # if self.meta._version >= packaging.version.parse("v2.1"):
-        #     # episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
-        #     self.stats = aggregate_stats(self.meta.episodes_stats)
-        #     self.action_max = np.pad(self.stats['action']['max'], (0, 30 - len(self.stats['action']['max'])), mode='constant')
-        #     self.action_min = np.pad(self.stats['action']['min'], (0, 30 - len(self.stats['action']['max'])), mode='constant')
-
         try:
             assert all((self.root / fpath).is_file() for fpath in self.get_episodes_file_paths())
             self.hf_dataset = self.load_hf_dataset_tmp()
@@ -282,11 +276,6 @@ class LatentLeRobotDataset(LeRobotDataset):
         for key, value in self.meta.episodes.items():
             episode_index = value["episode_index"]
             tasks = value["tasks"]
-            # rank = int(os.environ.get("RANK", 0))
-            # if rank == 0:  # 只在 rank0 停住
-            #     print(f"[Debug] Waiting for remote-PDB on port {4444} ...", flush=True)
-            #     RemotePdb("0.0.0.0", 4444).set_trace()
-            # # pdb.set_trace()
             # print(value.keys())
             action_config = value["action_config"]
             for acfg in action_config:
@@ -363,7 +352,6 @@ class LatentLeRobotDataset(LeRobotDataset):
         for key in self.used_video_keys:
             latent= data_dict[f"{key}.latent"]
             
-            latent_num_frames = data_dict[f"{key}.latent_num_frames"]
             latent_height = data_dict[f"{key}.latent_height"]
             latent_width = data_dict[f"{key}.latent_width"]
             latent = rearrange(latent, 
@@ -417,36 +405,6 @@ class LatentLeRobotDataset(LeRobotDataset):
             self.action_max - self.action_min + 1e-6
         ) * 2. - 1.
 
-        action_aligned = rearrange(action_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
-        action_mask_aligned = rearrange(action_mask_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
-        action_aligned *= action_mask_aligned
-        return torch.from_numpy(action_aligned).float(), torch.from_numpy(action_mask_aligned).bool()
-
-    def _action_post_process_abandon(self, local_start_frame, local_end_frame, latent_frame_ids, action):
-        act_shift = int(latent_frame_ids[0] - local_start_frame)
-        frame_stride = latent_frame_ids[1] - latent_frame_ids[0]
-        action = action[act_shift:]
-        if self.config.env_type == 'robotwin_tshape': ## TODO support get_relative_pose for other dataset, currently only support robotwin 
-            left_action = get_relative_pose(action[:, :7])
-            right_action = get_relative_pose(action[:, 8:15])
-            action = np.concatenate([left_action, action[:, 7:8], right_action, action[:, 15:16]], axis=1)
-        action = np.pad(action, pad_width=((frame_stride * 4, 0), (0, 0)), mode='constant', constant_values=0)
-
-        latent_frame_num = (len(latent_frame_ids) - 1) // 4 + 1
-        required_action_num = latent_frame_num * frame_stride * 4
-
-        action = action[:required_action_num]
-        action_mask = np.ones_like(action, dtype='bool')
-        assert action.shape[0] == required_action_num
-
-
-        action_paded = np.pad(action, ((0, 0), (0, 1)), mode='constant', constant_values=0)
-        action_mask_padded = np.pad(action_mask, ((0, 0), (0, 1)), mode='constant', constant_values=0)
-
-        action_aligned = action_paded[:, self.config.inverse_used_action_channel_ids]
-        action_mask_aligned = action_mask_padded[:, self.config.inverse_used_action_channel_ids]
-        action_aligned = (action_aligned - self.q01) / (
-                self.q99 - self.q01 + 1e-6) * 2. - 1.
         action_aligned = rearrange(action_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
         action_mask_aligned = rearrange(action_mask_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
         action_aligned *= action_mask_aligned
@@ -517,7 +475,6 @@ class LatentLeRobotDataset(LeRobotDataset):
     def _trace_data(self, start_frame, end_frame, episode_index, latent_data_dict):
         episode_chunk = self.meta.get_episode_chunk(episode_index)
         trace_path = Path(self.trace_path) / f"chunk-{episode_chunk:03d}"
-        out = {}
         trace_list = []
         for key in self.used_video_keys:
             cur_path = trace_path / key
@@ -577,8 +534,9 @@ class LatentLeRobotDataset(LeRobotDataset):
         return len(self.new_metas)
 
 if __name__ == '__main__':
-    from wan_va.configs import VA_CONFIGS
     from tqdm import tqdm
+
+    from wan_va.configs import VA_CONFIGS
     dset = MultiLatentLeRobotDataset(
         VA_CONFIGS['robotwin_train']
     )

@@ -22,19 +22,22 @@
 # - Initial conf filtering: drop bottom 10% (FG/BG)
 # - Downsample everything with --ds (H,W stride)
 
-import sys, pathlib
+import pathlib
+import sys
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-import os
-import time
-import threading
 import argparse
-from typing import Dict, List, Tuple, Optional
+import os
+import threading
+import time
+from typing import Dict, List, Optional, Tuple
 
+import cv2
 import numpy as np
 import torch
-import cv2
 import viser
+
 
 # ---- tiny helpers ----
 def to_numpy(x):
@@ -52,6 +55,8 @@ def ensure_dir(p):
 
 # ---- tiny HSV colormap (no heavy deps) ----
 import colorsys
+
+
 def hsv_colormap(vals01: np.ndarray) -> np.ndarray:
     """vals01: [T] in [0,1] -> [T,3] RGB in [0,1]"""
     vals01 = np.clip(vals01, 0.0, 1.0)
@@ -60,6 +65,7 @@ def hsv_colormap(vals01: np.ndarray) -> np.ndarray:
 
 # --- repo fn ---
 from trace_anything.trace_anything import evaluate_bspline_conf
+
 
 # ----------------------- I/O -----------------------
 def load_output_dict(path_or_dir: str) -> Dict:

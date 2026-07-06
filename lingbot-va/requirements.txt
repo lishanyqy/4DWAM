@@ -17,7 +17,9 @@ ftfy
 safetensors
 Pillow
 flash_attn
-# Post-training
+# Traceanything
+omegaconf
+viser
 # lerobot==0.3.3
-scipy
-wandb
+# scipy
+# wandb

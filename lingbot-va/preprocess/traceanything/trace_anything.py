@@ -25,25 +25,22 @@ Assumptions (pruned by asserts):
 """
 
 import math
+import pdb
 import time
+from contextlib import contextmanager
 from copy import deepcopy
 from functools import partial
 from typing import Dict, List
 
+import numpy as np
 import torch
 import torch.nn as nn
 from einops import rearrange
-import numpy as np
 
-from .layers.blocks import Block, PositionGetter
-from .layers.pos_embed import RoPE2D, get_1d_sincos_pos_embed_from_grid
-from .layers.patch_embed import get_patch_embed
 from .heads import PixelHead, ScalarHead
-
-from contextlib import contextmanager
-import time
-import pdb
-
+from .layers.blocks import Block, PositionGetter
+from .layers.patch_embed import get_patch_embed
+from .layers.pos_embed import RoPE2D, get_1d_sincos_pos_embed_from_grid
 
 # ======== B-spline  ========
 PRECOMPUTED_KNOTS = {

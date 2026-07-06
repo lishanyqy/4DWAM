@@ -4,15 +4,15 @@ import os
 import sys
 import time
 from functools import partial
-from PIL import Image
-from diffusers.video_processor import VideoProcessor
-from diffusers.utils import export_to_video
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from diffusers.pipelines.wan.pipeline_wan import prompt_clean
+from diffusers.utils import export_to_video
+from diffusers.video_processor import VideoProcessor
 from einops import rearrange
+from PIL import Image
 from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -33,9 +33,9 @@ from utils import (
     get_mesh_id,
     init_logger,
     logger,
+    modelswitch,
     run_async_server_mode,
     save_async,
-    modelswitch,
 )
 
 
