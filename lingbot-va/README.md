@@ -9,7 +9,7 @@
 | Model Name | Huggingface Repository | ModelScope Repository  | Description |
 | :--- | :--- | :--- | :--- |
 | lingbot-va-base &nbsp; | [🤗 robbyant/lingbot-va-base &nbsp;](https://huggingface.co/robbyant/lingbot-va-base) | [🤖 Robbyant/lingbot-va-base &nbsp;](https://modelscope.cn/models/Robbyant/lingbot-va-base)  | LingBot-VA w/ shared backbone|
-| TraceAnything &nbsp; | [🤗 depth-anything/trace-anything &nbsp;](https://huggingface.co/robbyant/lingbot-va-posttrain-robotwin) | [🤖 depth-anything/trace-anything &nbsp;](https://modelscope.cn/models/Robbyant/lingbot-va-posttrain-robotwin)  | Pretrained TraceAnything Model |
+| TraceAnything &nbsp; | [🤗 depth-anything/trace-anything &nbsp;](https://huggingface.co/depth-anything/trace-anything) | [🤖 depth-anything/trace-anything &nbsp;](https://modelscope.cn/models/depth-anything/trace-anything)  | Pretrained TraceAnything Model |
 
 - **Post-Training Dataset in Simulation**
 
