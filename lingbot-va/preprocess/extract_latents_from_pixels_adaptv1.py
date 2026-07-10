@@ -6,6 +6,8 @@
 用 Wan2.2 VAE (diffusers AutoencoderKLWan) + UMT5 文本编码器抽取 latent，
 并以 .pth 形式存到 latents/chunk-XXX/camera/episode_XXXXXX_start_end.pth 中。
 
+同时支持自动为缺少 action_config 的 episodes.jsonl 添加该字段。
+
 输入目录结构示例（--dataset-root）:
 
 your_dataset/
@@ -37,6 +39,12 @@ your_dataset/
     - text_emb, text
     - frame_ids, start_frame, end_frame
     - fps, ori_fps
+
+自动添加 action_config 规则（当 episodes.jsonl 缺少该字段时）：
+    - start_frame: 0
+    - end_frame: episode length
+    - action_text: tasks[0]（或指定字段的第一个元素）
+    - skill: ""（空字符串）
 """
 
 import argparse
@@ -241,6 +249,94 @@ def read_episode_video_frames(
     return video, T, H, W
 
 
+def add_action_config_to_episodes(
+    dataset_root: Path,
+    action_text_source: str = "tasks",
+    action_text_index: int = 0,
+    skill: str = "",
+    dry_run: bool = False,
+) -> int:
+    """
+    为 episodes.jsonl 中缺少 action_config 的 episode 添加 action_config 字段。
+
+    规则：
+    - 如果 episode 已有 action_config，跳过
+    - 否则添加 action_config = [{
+        "start_frame": 0,
+        "end_frame": length,
+        "action_text": tasks[action_text_index] (或 action_text_source 指定字段),
+        "skill": skill,
+    }]
+
+    Args:
+        dataset_root: 数据集根目录（包含 meta/episodes.jsonl）
+        action_text_source: 从哪个字段取 action_text，默认 "tasks"
+        action_text_index: 取 tasks 列表的第几个元素，默认 0
+        skill: skill 字段值，默认空字符串
+        dry_run: 如果为 True，只打印不写入
+
+    Returns:
+        修改的 episode 数量
+    """
+    meta_path = dataset_root / "meta" / "episodes.jsonl"
+    if not meta_path.exists():
+        print(f"[WARN] episodes.jsonl not found at {meta_path}, skip add_action_config.")
+        return 0
+
+    lines_out = []
+    modified_count = 0
+
+    with meta_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                lines_out.append(line)
+                continue
+            obj = json.loads(line)
+
+            if "action_config" in obj:
+                # 已有 action_config，保留原样
+                lines_out.append(json.dumps(obj, ensure_ascii=False))
+                continue
+
+            length = int(obj.get("length", 0))
+            tasks = obj.get("tasks", [])
+
+            # 获取 action_text
+            if action_text_source == "tasks" and tasks:
+                action_text = tasks[action_text_index] if action_text_index < len(tasks) else tasks[0]
+            else:
+                action_text = obj.get(action_text_source, "")
+
+            action_config = [{
+                "start_frame": 0,
+                "end_frame": length,
+                "action_text": action_text,
+                "skill": skill,
+            }]
+            obj["action_config"] = action_config
+            lines_out.append(json.dumps(obj, ensure_ascii=False))
+            modified_count += 1
+
+    if modified_count > 0 and not dry_run:
+        # 备份原文件
+        backup_path = meta_path.with_suffix(".jsonl.bak")
+        if not backup_path.exists():
+            meta_path.rename(backup_path)
+            print(f"[INFO] backed up original to {backup_path}")
+
+        with meta_path.open("w", encoding="utf-8") as f:
+            for line in lines_out:
+                f.write(line + "\n")
+
+    if dry_run:
+        print(f"[DRY-RUN] Would modify {modified_count} episodes in {meta_path}")
+    else:
+        print(f"[INFO] modified {modified_count} episodes in {meta_path}")
+
+    return modified_count
+
+
 def process_dataset(
     dataset_root: Path,
     models_root: Path,
@@ -251,8 +347,13 @@ def process_dataset(
     max_frames: int = 0,
     text_length: int = 128,
     device_str: str = "cuda:0",
+    auto_add_action_config: bool = True,
 ):
     device = torch.device(device_str)
+
+    # 自动添加 action_config（如果缺失）
+    if auto_add_action_config:
+        add_action_config_to_episodes(dataset_root)
 
     # 加载模型
     vae, text_encoder, tokenizer = build_wan2_2_components(models_root, device)
@@ -443,6 +544,18 @@ def main():
         help="Text max length (tokenizer param, mostly unused with T5TokenizerFast)",
     )
     parser.add_argument(
+        "--auto-add-action-config",
+        action="store_true",
+        default=True,
+        help="Automatically add action_config to episodes.jsonl if missing (default: True)",
+    )
+    parser.add_argument(
+        "--no-auto-add-action-config",
+        action="store_false",
+        dest="auto_add_action_config",
+        help="Disable automatic addition of action_config",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cuda:0",
@@ -474,6 +587,7 @@ def main():
             max_frames=args.max_frames,
             text_length=args.text_length,
             device_str=args.device,
+            auto_add_action_config=args.auto_add_action_config,
         )
 
 
