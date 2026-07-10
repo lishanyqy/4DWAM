@@ -111,7 +111,6 @@ class Trainer:
         )
         self.transformer._init_trace_parameters(
             data_type = torch.float32,
-            K_frames = self.K_frames,
             align_layer = self.align_layer
         )
         logger.info("Setting up activation checkpointing ...")

@@ -77,7 +77,13 @@ step1到step3是lingbot-va的数据集处理的常规步骤，如果lingbot-va�
 We provide a script for lerobot dataset generate latent style lerobot dataset, which is fulfill requirements of Lingbot-VA. Download WAN2.2 components (VAE2.2, T5Encoder) and move them in one directory before running. This step covers step1~step3.
 
 ```bash
-python preprocess/extract_latents_from_lerobot.py --dataset-root [DATASET_PATH] --models-root [MODELS_PATH]
+# python preprocess/extract_latents_from_lerobot.py --dataset-root [DATASET_PATH] --models-root [MODELS_PATH]
+python preprocess/extract_latents_from_pixels_adaptv1.py \
+    --dataset-root [DATASET_PATH] \
+    --models-root [MODELS_PATH] \
+    --max-frames 30 \
+    --cameras view1,view2,view3 \
+    --auto-add-action-config false \
 ```
 
 **Step 1: Convert your data to LeRobot format**
