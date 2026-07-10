@@ -78,6 +78,13 @@ We provide a script for lerobot dataset generate latent style lerobot dataset, w
 
 ```bash
 python preprocess/extract_latents_from_lerobot.py --dataset-root [DATASET_PATH] --models-root [MODELS_PATH]
+
+python preprocess/extract_latents_from_pixels_adaptv1.py \
+    --dataset-root [DATASET_PATH] \
+    --models-root [MODELS_PATH] \
+    --max-frames 30 \
+    --cameras view1,view2,view3 \
+    --auto-add-action-config false \
 ```
 
 **Step 1: Convert your data to LeRobot format**

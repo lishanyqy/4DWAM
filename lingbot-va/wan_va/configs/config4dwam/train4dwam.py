@@ -44,6 +44,6 @@ lingbot4dwam_train_cfg.trace_coef = 0.01
 
 lingbot4dwam_train_cfg.loss_weights = {
     'dest_loss':0.01,
-    'motion_loss':0.0025,
+    'motion_loss':0.01,
     'trace_loss':0.01,
 }
