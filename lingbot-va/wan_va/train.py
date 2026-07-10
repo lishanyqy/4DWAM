@@ -35,9 +35,6 @@ from distributed.fsdp import apply_ac, shard_model
 from distributed.util import _configure_model, dist_max, dist_mean, init_distributed
 from einops import rearrange
 from modules.alignment import (
-    destination_loss_safe,
-    motion_incremental_alignment,
-    motion_incremental_alignment_tokenwise,
     unified_dest_and_motion,
 )
 from modules.utils import (
