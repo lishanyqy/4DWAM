@@ -355,7 +355,13 @@ def sample_frames(
     total_len: int, start_frame: int, end_frame: int, ori_fps: int, target_fps: int
 ) -> List[int]:
     """
-    [start_frame, end_frame) sample target_fps index。
+    Sample frames in [start_frame, end_frame) at target_fps relative to ori_fps.
+
+    Uses a constant integer stride so frame_ids stay uniformly spaced, which the
+    training loader assumes via `frame_ids[1] - frame_ids[0]`.
+
+    Also trims the sampled sequence to F = 4k + 1 frames so Wan VAE temporal
+    compression is well-defined: T_latent = (F - 1) // 4 + 1.
     """
     start_frame = max(0, start_frame)
     end_frame = min(total_len, end_frame)
@@ -363,24 +369,28 @@ def sample_frames(
         return []
 
     if target_fps <= 0 or ori_fps <= 0:
-        return list(range(start_frame, end_frame))
+        frame_ids = list(range(start_frame, end_frame))
+    else:
+        if target_fps > ori_fps:
+            raise ValueError(
+                f"target_fps ({target_fps}) cannot exceed ori_fps ({ori_fps}) "
+                "without temporal interpolation."
+            )
+        if ori_fps % target_fps != 0:
+            raise ValueError(
+                "Current training expects a constant integer frame stride, but "
+                f"ori_fps={ori_fps} is not divisible by target_fps={target_fps}. "
+                "Prefer e.g. 60->15/12/10/20."
+            )
+        frame_stride = ori_fps // target_fps
+        frame_ids = list(range(start_frame, end_frame, frame_stride))
 
-    cur_frames = end_frame - start_frame
-    # step = float(ori_fps) / float(target_fps)
-    # ids: List[int] = []
-    # t = float(start_frame)
-    # while t < end_frame:
-    #     ids.append(int(round(t)))
-    #     t += step
+    # Wan VAE constraint: number of input frames must satisfy F % 4 == 1.
+    if len(frame_ids) >= 1:
+        valid_frame_count = ((len(frame_ids) - 1) // 4) * 4 + 1
+        frame_ids = frame_ids[:valid_frame_count]
 
-    # ids = sorted(set(ids))
-    # ids = [i for i in ids if start_frame <= i < end_frame]
-
-    intervals = int(cur_frames / target_fps)
-
-    ids = [i for i in range(start_frame, end_frame, intervals)]
-
-    return ids
+    return frame_ids
 
 
 def resize_video_tensor(video: torch.Tensor, size: int) -> torch.Tensor:
@@ -494,7 +504,8 @@ def process_dataset(
         video_resized = resize(torch.stack(video, dim=0), image_keys[image_column])
         # save_image(video_resized[20],'tmp.png')
         # video_resized = video
-        episode_ori_fps = len(video_resized)
+        # Use the dataset source FPS, not the episode frame count.
+        episode_ori_fps = int(ori_fps)
 
         # segment_rows: List[Dict[str, Any]] = []
         # one episode write to one parquet
@@ -518,50 +529,60 @@ def process_dataset(
                     f"[{start_frame},{end_frame}) -> empty frame_ids, skip."
                 )
                 continue
+
+            if len(frame_ids) < 5:
+                print(
+                    f"[WARN] episode {episode_index:06d} seg#{seg_id} "
+                    f"only has {len(frame_ids)} sampled frames after 4k+1 trim, skip."
+                )
+                continue
             
             frames = video_resized[frame_ids]  # [N,3,H,W]
             # frames = torch.stack(video_resized, dim=0)
             N, _, H_res, W_res = frames.shape
+            if (N - 1) % 4 != 0:
+                raise RuntimeError(
+                    f"Sampled frame count must satisfy (N-1)%4==0, got N={N} "
+                    f"for episode {episode_index:06d} seg#{seg_id}"
+                )
             u = frames.permute(1, 0, 2, 3).contiguous()
             u = u.to(device)
             # VAE 编码
             latents = encode_video_with_vae(vae, [u], device=device)[0]
             if latents.dim() != 4:
                 raise RuntimeError(
-                    f"VAE latent shape expected 4D [N,C,H,W], got {latents.shape}"
+                    f"VAE latent shape expected 4D [C,T,H,W], got {latents.shape}"
                 )
             z_dim, T_lat, H_lat, W_lat = latents.shape
-            # assert N_lat == N, "latent_num_frames != frame_ids 数量，请检查 VAE encode"
-            # latents_bf16 = latents.to(dtype=torch.bfloat16)
+            expected_latent_frames = (N - 1) // 4 + 1
+            if T_lat != expected_latent_frames:
+                raise RuntimeError(
+                    f"VAE latent frames mismatch for episode {episode_index:06d} "
+                    f"seg#{seg_id}: expected {expected_latent_frames} from "
+                    f"(N-1)//4+1 with N={N}, got {T_lat}"
+                )
             # bfloat16 & flatten 成 [N * H_lat * W_lat, C_lat]
             latents_bf16 = latents.to(dtype=torch.bfloat16)
             latent_flat = (
                 latents_bf16.permute(1, 2, 3, 0)
                 .reshape(-1, z_dim)
-            )  # [N*H_lat*W_lat, C_lat]
-
-            # latent_bytes, latent_dtype_str = tensor_to_bytes(latent_flat)
+            )  # [T_lat*H_lat*W_lat, C_lat]
 
             # text embedding
-            # text_emb = encode_text(
-            #     text_encoder, tokenizer, action_text, device=device
-            # )
             text_emb = encode_text(
                 text_encoder, action_text, device=device
             )[0]
-            # if text_emb.shape[-2] < text_length:
-            #     text_emb = torch.cat([text_emb,torch.zeros(text_length - text_emb.shape[-2], text_emb.shape[-1])], dim = 0)
-            # elif text_emb.shape[-2] > text_length:
-            #     raise ValueError(f"Please consider larger text_length, currently is {text_length}")
             text_emb_bf16 = text_emb.to(dtype=torch.bfloat16)
-            # text_emb_bytes, text_emb_dtype_str = tensor_to_bytes(text_emb_bf16)
             text_emb_shape = list(text_emb_bf16.shape)
             if len(text_emb_shape) == 1:
                 text_emb_n, text_emb_d = 1, int(text_emb_shape[0])
             else:
                 text_emb_n, text_emb_d = int(text_emb_shape[0]), int(text_emb_shape[1])
             if text_emb_d != 4096:
-                print(f'somthing wrong, the text_emb_d is not 4096,{text_emb_d.shape}')
+                print(
+                    f"[WARN] text_emb_d is not 4096, got {text_emb_d} "
+                    f"for episode {episode_index:06d} seg#{seg_id}"
+                )
             row = {
                 "episode_index": int(episode_index),
                 "segment_index": int(seg_id),

@@ -1,0 +1,19 @@
+defaults:
+  output_root: /soft/wangxi/4DWAM/datasets_converted
+  source_fps: 60
+  fps: 60
+  media_layout: step3-compatible
+  gripper_mode: normalize
+  push_to_hub: false
+  overwrite: false
+  max_episodes: null
+
+# All source datasets below are merged into this one LeRobot dataset.
+repo_id: lift2_merged_step3_compatible_60hz
+
+datasets:
+  - data_dir: /soft/wangxi/4DWAM/datasets/dataset_0402_wrench
+    task_description: Put the block on the plate.
+
+  - data_dir: /soft/wangxi/4DWAM/datasets/dataset_0410_towel_refined
+    task_description: Fold the towel.

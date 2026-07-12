@@ -13,19 +13,46 @@ license = { file = "LICENSE.txt" }
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 dependencies = [
-    "torch>=2.9.0",
-    "torchvision>=0.24.0",
-    "diffusers>=0.36.0",
-    "transformers>=4.55.4",
+    "torch==2.9.0",
+    "torchvision==0.24.0",
+    "torchaudio==2.9.0",
+    "diffusers==0.36.0",
+    "transformers==4.55.2",
     "tokenizers>=0.21.4",
+    "accelerate",
+    "einops",
     "tqdm",
-    "imageio",
+    "imageio[ffmpeg]",
     "easydict",
-    "flash_attn",
+    "websockets",
+    "msgpack",
+    "opencv-python",
+    "matplotlib",
+    "ftfy",
+    "safetensors",
+    "Pillow",
     "numpy>=1.26.4,<2"
 ]
 
 [project.optional-dependencies]
+train = [
+    "flash-attn",
+]
+conversion = [
+    "av",
+    "datasets",
+    "h5py",
+    "jsonlines",
+    "omegaconf",
+    "pandas",
+    "pyarrow",
+    "PyYAML",
+    "tyro",
+]
+posttrain = [
+    "scipy",
+    "wandb",
+]
 dev = [
     "pytest",
     "black",
@@ -58,6 +85,18 @@ profile = "black"
 [tool.mypy]
 strict = true
 
-[tool.uv.extra-build-dependencies]
-flash-attn = ["torch"]
+[tool.uv]
+package = false
 
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch", "setuptools", "wheel", "packaging", "ninja"]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
+torchaudio = { index = "pytorch-cu126" }

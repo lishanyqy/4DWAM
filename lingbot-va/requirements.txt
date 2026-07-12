@@ -16,6 +16,7 @@ matplotlib
 ftfy
 safetensors
 Pillow
+PyYAML
 flash_attn
 # Traceanything
 omegaconf

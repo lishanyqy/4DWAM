@@ -442,15 +442,26 @@ def process_dataset(
 
             C_lat, T_lat, H_lat, W_lat = latents.shape
 
-            # 转成 bfloat16 并 flatten 成 [T_lat * H_lat * W_lat, C_lat]
+            # 转成 bfloat16，flatten 后移到 CPU，避免保存文件携带 CUDA 设备信息。
             latents_bf16 = latents.to(dtype=torch.bfloat16)
-            latent_flat = latents_bf16.permute(1, 2, 3, 0).reshape(-1, C_lat)
+            latent_flat = (
+                latents_bf16.permute(1, 2, 3, 0)
+                .reshape(-1, C_lat)
+                .detach()
+                .cpu()
+                .contiguous()
+            )
 
             # 文本编码
             text_emb = encode_text(
                 text_encoder, tokenizer, action_text, device=device, pad_length=text_length
             )
-            text_emb_bf16 = text_emb.to(dtype=torch.bfloat16)
+            text_emb_bf16 = (
+                text_emb.to(dtype=torch.bfloat16)
+                .detach()
+                .cpu()
+                .contiguous()
+            )
             text_emb_n, text_emb_d = text_emb_bf16.shape
 
             if text_emb_d != 4096:
@@ -488,13 +499,13 @@ def main():
     '''
     示例：
     
-    python preprocess/extract_latents_from_pixels0710.py \
+    python preprocess/extract_latents_from_pixels_adaptv1.py \
         --dataset-root dataset_root \
         --models-root encoder_model_path \
         --max-frames 30 \
         --cameras view1,view2,view3
     '''
-    # python preprocess/extract_latents_from_pixels0710.py --dataset-root /data/user/prtroas0003/lishan/dataspace/robotwin_samples/lift_pot-demo_clean_collect_200-50
+    # python preprocess/extract_latents_from_pixels_adaptv1.py --dataset-root /data/user/prtroas0003/lishan/dataspace/robotwin_samples/lift_pot-demo_clean_collect_200-50
     # --models-root /data/user/prtroas0003/lishan/modelspace/lingbot-va-base
     # --max-frames 30
     home_path = '~/lishan'

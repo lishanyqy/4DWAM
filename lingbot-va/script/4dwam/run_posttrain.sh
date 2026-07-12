@@ -10,16 +10,16 @@ PORT=${PORT:-"1106"}
 LOG_RANK=${LOG_RANK:-"0"}
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE:-"http://localhost:29510"}
 CONFIG_NAME=${CONFIG_NAME:-"train_4dwam"}
-PYTHON_BIN=${PYTHON_BIN:-"${HOME}/miniconda3/envs/lingbot/bin/python"}
+# PYTHON_BIN=${PYTHON_BIN:-"${HOME}/miniconda3/envs/lingbot/bin/python"}
 
 overrides=""
 if [ $# -ne 0 ]; then
     overrides="$*"
 fi
-    export WANDB_API_KEY="wandb_your_api_key"
+    export WANDB_API_KEY="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"
     export WANDB_BASE_URL="https://api.wandb.ai"
-    export WANDB_TEAM_NAME="your_team_name"
-    export WANDB_PROJECT="your_project_name"
+    export WANDB_TEAM_NAME="infinity4b"
+    export WANDB_PROJECT="4DWAM"
 
 ## node setting
 num_gpu=${NGPU}

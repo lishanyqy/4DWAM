@@ -10,3 +10,9 @@ wandb/*
 .idea/*
 .codex
 .vscode/*
+*.hdf5
+datasets
+datasets_converted
+*.egg-info/
+checkpoints/
+lingbot-va/preprocess/my_lift2_conversion_*.yaml
