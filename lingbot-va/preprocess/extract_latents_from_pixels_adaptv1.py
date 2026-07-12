@@ -469,7 +469,7 @@ def process_dataset(
 
             # 构建输出字典
             row = {
-                "latent": latent_flat,
+                "latent": latent_flat.detach().cpu(),
                 "latent_num_frames": int(T_lat),
                 "latent_height": int(H_lat),
                 "latent_width": int(W_lat),

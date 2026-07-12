@@ -39,8 +39,8 @@ def custom_sdpa(q, k, v):
                                          v.transpose(1, 2))
     return out.transpose(1, 2)
 
-# MAX_TEXT_LEN = 128
-MAX_TEXT_LEN = 512
+MAX_TEXT_LEN = 128
+# MAX_TEXT_LEN = 512
 
 class FlexAttnFunc(nn.Module):
     flex_attn: ClassVar[Callable] = torch.compile(
@@ -215,7 +215,7 @@ class FlexAttnFunc(nn.Module):
             )
         FlexAttnFunc.attention_mask = block_mask
 
-        text_seq_ids = torch.arange(B)[:, None].expand(-1, 512).flatten()
+        text_seq_ids = torch.arange(B)[:, None].expand(-1, MAX_TEXT_LEN).flatten()
         mask_mod_cross = FlexAttnFunc._get_cross_mask_mod(seq_ids.long().to(device), text_seq_ids.long().to(device))
         block_mask_cross = FlexAttnFunc.compiled_create_block_mask(
                 mask_mod_cross, 1, 1, len(seq_ids), len(text_seq_ids), device=device, _compile=True

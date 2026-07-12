@@ -39,7 +39,7 @@ lingbot4dwam_train_cfg.align_layer = 20
 lingbot4dwam_train_cfg.keyword = f'4DWAM_{lingbot4dwam_train_cfg.align_layer}'
 # Change your save_root
 lingbot4dwam_train_cfg.save_root = f"/data/lingbot/{lingbot4dwam_train_cfg.keyword}/train_{int(64/lingbot4dwam_train_cfg.gradient_accumulation_steps)}_{lingbot4dwam_train_cfg.gradient_accumulation_steps}_{lingbot4dwam_train_cfg.num_steps}"
-lingbot4dwam_train_cfg.max_tokens = 512
+lingbot4dwam_train_cfg.max_tokens = 128
 
 # 4D WAM Hyper-Parameter
 lingbot4dwam_train_cfg.enable_trace = True
