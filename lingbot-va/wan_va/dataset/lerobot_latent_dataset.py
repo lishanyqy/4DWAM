@@ -259,12 +259,21 @@ class LatentLeRobotDataset(LeRobotDataset):
         self.enable_trace = config.enable_trace
 
     def load_hf_dataset_tmp(self) -> datasets.Dataset:
-        """hf_dataset contains all the observations, states, actions, rewards, etc."""
+        """Load parquet action/state rows for all episode chunks under data/.
+
+        Previously this hard-coded data/chunk-000 only. Datasets with more than
+        chunks_size episodes (e.g. chunk-001+) then produced out-of-range global
+        frame slices, empty action tensors, and IndexError in _action_post_process.
+        Match official LeRobotDataset.load_hf_dataset and recurse all chunk-*.
+        """
         if self.episodes is None:
-            path = str(self.root / "data" / "chunk-000")
+            path = str(self.root / "data")
             hf_dataset = load_dataset("parquet", data_dir=path, split="train")
         else:
-            files = [str(self.root / self.meta.get_data_file_path(ep_idx)) for ep_idx in self.episodes]
+            files = [
+                str(self.root / self.meta.get_data_file_path(ep_idx))
+                for ep_idx in self.episodes
+            ]
             hf_dataset = load_dataset("parquet", data_files=files, split="train")
 
         # TODO(aliberts): hf_dataset.set_format("torch")
@@ -366,6 +375,14 @@ class LatentLeRobotDataset(LeRobotDataset):
 
         text_emb = data_dict[f"{self.used_video_keys[0]}.text_emb"]
         if torch.rand(1).item() < self.cfg_prob:
+            if self.empty_emb.shape != text_emb.shape:
+                raise ValueError(
+                    "empty_emb shape must match sample text_emb for CFG dropout: "
+                    f"empty_emb={tuple(self.empty_emb.shape)}, "
+                    f"text_emb={tuple(text_emb.shape)}. "
+                    "Regenerate empty_emb.pt with preprocess/generate_empty_emb.py "
+                    f"--text-length {text_emb.shape[0]}."
+                )
             text_emb = self.empty_emb
 
         out_dict = dict(
@@ -441,6 +458,18 @@ class LatentLeRobotDataset(LeRobotDataset):
         return np.stack(out, axis=0)
 
     def _action_post_process(self, local_start_frame, local_end_frame, latent_frame_ids, action):
+        if not torch.is_tensor(action):
+            action = torch.as_tensor(action)
+        # Empty / rank-1 action usually means the global frame slice missed the
+        # parquet rows (e.g. only chunk-000 was loaded while episode is later).
+        if action.ndim < 2 or action.shape[0] == 0:
+            raise ValueError(
+                "Invalid action tensor for post-process: "
+                f"shape={tuple(action.shape)}, "
+                f"local_frames=[{local_start_frame}, {local_end_frame}), "
+                f"latent_frame_ids_len={len(latent_frame_ids)}. "
+                "Check that hf_dataset includes every data/chunk-* parquet."
+            )
         if action.shape[1] == 14:
             action = self.action14_to_action16(action)
         act_shift = int(latent_frame_ids[0] - local_start_frame)
@@ -488,13 +517,16 @@ class LatentLeRobotDataset(LeRobotDataset):
             # latent_data = df.to_dict()
             trace_data = torch.load(trace_file, weights_only=False)
             height, width = latent_data_dict[f"{key}.latent_height"], latent_data_dict[f"{key}.latent_width"]
-            # (F, T, D) (85, 320, 1024)
-            # trace_data = arrange()
-            trace_data = rearrange(trace_data, 
-                                 'f (h w) c -> f h w c', 
-                                #  f=, 
-                                 h=height, 
-                                 w=width)
+            # Trace is stored at video-sample rate (same T as frame_ids), with
+            # spatial tokens matching the VAE latent grid (h*w). Model-side
+            # downsample_trace() interpolates time to match latent frames.
+            # (F, T, D) e.g. (396, 320, 1024) for high cam with F_video=396.
+            trace_data = rearrange(
+                trace_data,
+                'f (h w) c -> f h w c',
+                h=height,
+                w=width,
+            )
             trace_list.append(trace_data)
         wrist_trace = torch.cat(trace_list[1:], dim=2)
         cat_trace = torch.cat([wrist_trace, trace_list[0]], dim=1)
@@ -522,7 +554,12 @@ class LatentLeRobotDataset(LeRobotDataset):
         # pdb.set_trace()
         out_dict = self._cat_video_latents(ori_data_dict)
 
-        out_dict['actions'], out_dict['actions_mask'] = self._action_post_process(local_start_frame, local_end_frame, latent_frame_ids, ori_data_dict['action'])
+        out_dict['actions'], out_dict['actions_mask'] = self._action_post_process(
+            local_start_frame,
+            local_end_frame,
+            latent_frame_ids,
+            ori_data_dict['action'],
+        )
 
         out_dict['latents'] = out_dict['latents'].permute(3, 0, 1, 2)
         if self.enable_trace:
