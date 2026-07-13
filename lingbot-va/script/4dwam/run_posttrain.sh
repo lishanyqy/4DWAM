@@ -16,7 +16,6 @@ overrides=""
 if [ $# -ne 0 ]; then
     overrides="$*"
 fi
-    export WANDB_API_KEY="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"
     export WANDB_BASE_URL="https://api.wandb.ai"
     export WANDB_TEAM_NAME="infinity4b"
     export WANDB_PROJECT="4DWAM"
