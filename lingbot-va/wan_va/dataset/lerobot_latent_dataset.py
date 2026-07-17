@@ -533,6 +533,31 @@ class LatentLeRobotDataset(LeRobotDataset):
         # return self._flatten_latent_dict(out)
         return cat_trace
 
+    def _try_crop_temporal_window(self, out_dict):
+        train_num_frames = getattr(self.config, "train_num_frames", None)
+        if train_num_frames is None or train_num_frames <= 0:
+            return out_dict
+
+        total_frames = out_dict["latents"].shape[1]
+        if total_frames <= train_num_frames:
+            return out_dict
+
+        if getattr(self.config, "random_frame_window", True):
+            start = torch.randint(0, total_frames - train_num_frames + 1, (1,)).item()
+        else:
+            start = 0
+        end = start + train_num_frames
+
+        out_dict["latents"] = out_dict["latents"][:, start:end]
+        if "actions" in out_dict:
+            out_dict["actions"] = out_dict["actions"][:, start:end]
+        if "actions_mask" in out_dict:
+            out_dict["actions_mask"] = out_dict["actions_mask"][:, start:end]
+        if "trace" in out_dict:
+            out_dict["trace"] = out_dict["trace"][start:end]
+
+        return out_dict
+
     def __getitem__(self, idx) -> dict:
         idx = idx % len(self.new_metas)
         cur_meta = self.new_metas[idx]
@@ -564,6 +589,8 @@ class LatentLeRobotDataset(LeRobotDataset):
         out_dict['latents'] = out_dict['latents'].permute(3, 0, 1, 2)
         if self.enable_trace:
             out_dict['trace'] = trace_data
+        
+        out_dict = self._try_crop_temporal_window(out_dict)
         # print(f'index: {idx}, {out_dict.keys()}')
         return out_dict
 

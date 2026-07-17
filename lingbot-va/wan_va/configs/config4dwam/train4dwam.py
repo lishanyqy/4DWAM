@@ -41,6 +41,7 @@ lingbot4dwam_train_cfg.keyword = f'4DWAM_{lingbot4dwam_train_cfg.align_layer}'
 lingbot4dwam_train_cfg.save_root = f"/data/lingbot/{lingbot4dwam_train_cfg.keyword}/train_{int(64/lingbot4dwam_train_cfg.gradient_accumulation_steps)}_{lingbot4dwam_train_cfg.gradient_accumulation_steps}_{lingbot4dwam_train_cfg.num_steps}"
 lingbot4dwam_train_cfg.max_tokens = 128
 
+
 # 4D WAM Hyper-Parameter
 lingbot4dwam_train_cfg.enable_trace = True
 lingbot4dwam_train_cfg.trace_coef = 0.01
@@ -50,3 +51,7 @@ lingbot4dwam_train_cfg.loss_weights = {
     'motion_loss':0.01,
     'trace_loss':0.01,
 }
+
+# For real limitation
+lingbot4dwam_train_cfg.train_num_frames = 40
+lingbot4dwam_train_cfg.random_frame_window = True
