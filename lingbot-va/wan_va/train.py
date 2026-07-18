@@ -291,8 +291,8 @@ class Trainer:
         input_dict = {
             'latent_dict': latent_dict,
             'action_dict': action_dict,
-            'chunk_size': torch.randint(1, 5, (1,)).item(),
-            'window_size': torch.randint(4, 65, (1,)).item(),
+            'chunk_size': torch.randint(2, 5, (1,)).item(),
+            'window_size': torch.randint(8, 65, (1,)).item(),
         }
 
         if 'trace' in batch_dict:
