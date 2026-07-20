@@ -103,10 +103,12 @@ class Trainer:
             transformer_path = os.path.join(config.wan22_pretrained_model_name_or_path, 'transformer')
         
         print('*'*20,transformer_path)
-        modelswitch(transformer_path, is_train = True)
+        # Do not rewrite shared HF cache config.json under torchrun; pass attn_mode instead.
+        attn_mode = modelswitch(transformer_path, is_train=True)
         self.transformer = load_transformer(
             transformer_path,
             torch_dtype=torch.float32,
+            attn_mode=attn_mode,
             torch_device='cpu',
         )
         self.transformer._init_trace_parameters(

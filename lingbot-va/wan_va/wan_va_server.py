@@ -87,13 +87,17 @@ class VA_Server:
             torch_device=self.device,
         )
 
-        modelswitch(os.path.join(job_config.wan22_pretrained_model_name_or_path,
-                         'transformer'), is_train = True)
+        transformer_path = os.path.join(
+            job_config.wan22_pretrained_model_name_or_path,
+            'transformer',
+        )
+        # Do not rewrite shared HF cache config.json; pass attn_mode instead.
+        attn_mode = modelswitch(transformer_path, is_train=True)
         self.transformer = load_transformer(
-            os.path.join(job_config.wan22_pretrained_model_name_or_path,
-                         'transformer'),
+            transformer_path,
             torch_dtype=self.dtype,
             torch_device=self.device,
+            attn_mode=attn_mode,
         )
         shard_fn = shard_model
         self.transformer = _configure_model(model=self.transformer,
