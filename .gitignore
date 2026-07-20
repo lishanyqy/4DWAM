@@ -15,4 +15,5 @@ datasets
 datasets_converted
 *.egg-info/
 checkpoints/
+lingbot-va/real_robot_server_out/
 lingbot-va/preprocess/my_lift2_conversion_*.yaml
