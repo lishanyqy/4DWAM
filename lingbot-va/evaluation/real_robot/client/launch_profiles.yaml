@@ -1,0 +1,38 @@
+# Client-side launch profiles for LIFT2 + LingBot-VA / 4DWAM.
+# Server must listen on the same host:port (default 7777).
+
+profiles:
+  lift2_va_default:
+    host: 127.0.0.1
+    port: 7777
+    publish_rate: 60
+    camera_mode: tshape
+    bridge_mode: segment_relative_va
+    first_chunk_start_idx: 1
+    keyframe_divisor: 4
+    gripper_raw_max: 5.0
+    # Match openpi-on-LIFT2: wait for arm state, then reset before evaluation.
+    auto_init: true
+    init_duration: 3.0
+    wait_after_init: false
+    left_init_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    right_init_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    # Optional high-rate executor (defaults to publish_rate when unset)
+    # executor_rate_hz: 60
+    # max_publish_step: 0 means run until Ctrl+C
+    max_publish_step: 0
+
+  # Same defaults; override host for local dry-run against a nearby GPU box.
+  dry_run:
+    host: 127.0.0.1
+    port: 7777
+    publish_rate: 60
+    camera_mode: tshape
+    bridge_mode: segment_relative_va
+    first_chunk_start_idx: 1
+    keyframe_divisor: 4
+    gripper_raw_max: 5.0
+    auto_init: false
+    max_publish_step: 0
+    # Full mock loop: reset -> infer -> fake execute -> KV -> infer.
+    dry_run_mock_chunks: 2

@@ -1,0 +1,11 @@
+# Robot-side dependencies for evaluation/real_robot/client
+# ROS (rospy, sensor_msgs, cv_bridge, arm_control) come from the robot ROS workspace.
+
+# ROS Noetic cv_bridge is built against the NumPy 1.x C API.
+numpy>=1.23,<2
+# OpenCV 4.12+ requires NumPy 2 on modern Python, which conflicts with cv_bridge.
+opencv-python-headless>=4.5,<4.12
+PyYAML>=6.0
+websockets>=12.0
+msgpack>=1.0
+scipy>=1.10

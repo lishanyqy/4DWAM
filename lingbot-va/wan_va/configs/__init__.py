@@ -5,6 +5,8 @@ from .va_robotwin_cfg import va_robotwin_cfg
 from .va_robotwin_i2va import va_robotwin_i2va_cfg
 from .va_robotwin_train_cfg import va_robotwin_train_cfg
 from .va_lift2_merged_train_cfg import va_lift2_merged_train_cfg
+from .va_lift2_merged_infer_cfg import va_lift2_merged_infer_cfg
+from .va_4dwam_lift2_infer_cfg import va_4dwam_lift2_infer_cfg
 
 from .config4dwam.train4dwam import lingbot4dwam_train_cfg as train_4dwam
 from .config4dwam.train4dwam_long185_test import lingbot4dwam_train_cfg as train_4dwam_long185_test
@@ -27,6 +29,8 @@ VA_CONFIGS = {
     'franka_i2av': va_franka_i2va_cfg,
     'robotwin_train': va_robotwin_train_cfg,
     'lift2_merged_va': va_lift2_merged_train_cfg,
+    'lift2_merged_infer': va_lift2_merged_infer_cfg,
+    '4dwam_lift2_infer': va_4dwam_lift2_infer_cfg,
     '4dwam': train_4dwam,
     '4dwam_long185_test': train_4dwam_long185_test,
     '4dwam_long285_test': train_4dwam_long285_test,
