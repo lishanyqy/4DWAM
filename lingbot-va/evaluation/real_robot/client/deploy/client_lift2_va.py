@@ -36,7 +36,7 @@ DEFAULT_LANGUAGE_INSTRUCTION = 'perform task'
 
 PRESET_TASK_INSTRUCTIONS = {
     'tube': 'Transfer the test tube from the right rack to the left rack.',
-    'towel': 'Flatten the towel.',
+    'towel': 'Fold the towel.',
     'wrench': 'Open the toolbox, check the items inside one by one, and find the wrench.',
     'power_strip': (
         'Move the power strip with the left arm, and press the button of the '

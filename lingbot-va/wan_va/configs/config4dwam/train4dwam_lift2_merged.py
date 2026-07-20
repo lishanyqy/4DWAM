@@ -46,12 +46,12 @@ if (
         f'q99={len(lingbot4dwam_train_cfg.norm_stat["q99"])}'
     )
 
-# Must match latent text_emb length (128). Generate with:
-#   python preprocess/generate_empty_emb.py --text-length 128 \
-#     --output-path <dataset>/empty_emb.pt
+# Must match latent text_emb length (64). Generate with:
+#   python preprocess/generate_empty_emb.py --text-length 64 \
+#     --output-path <data_path>/empty_emb_64.pt
 lingbot4dwam_train_cfg.empty_emb_path = os.path.join(
-    lingbot4dwam_train_cfg.dataset_path,
-    'empty_emb.pt',
+    lingbot4dwam_train_cfg.data_path,
+    'empty_emb_64.pt',
 )
 lingbot4dwam_train_cfg.enable_wandb = True
 lingbot4dwam_train_cfg.load_worker = 16
@@ -93,7 +93,7 @@ lingbot4dwam_train_cfg.save_root = os.path.join(
         f'{lingbot4dwam_train_cfg.num_steps}'
     ),
 )
-lingbot4dwam_train_cfg.max_tokens = 128
+lingbot4dwam_train_cfg.max_tokens = 64
 
 # 4D WAM hyperparameters.
 lingbot4dwam_train_cfg.enable_trace = True

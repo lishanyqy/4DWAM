@@ -49,8 +49,8 @@ if (
     )
 
 va_lift2_merged_train_cfg.empty_emb_path = os.path.join(
-    va_lift2_merged_train_cfg.dataset_path,
-    'empty_emb.pt',
+    va_lift2_merged_train_cfg.data_path,
+    'empty_emb_128.pt',
 )
 va_lift2_merged_train_cfg.max_tokens = 128
 
