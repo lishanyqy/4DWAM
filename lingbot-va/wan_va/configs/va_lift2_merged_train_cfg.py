@@ -66,9 +66,17 @@ va_lift2_merged_train_cfg.wan22_pretrained_model_name_or_path = os.path.join(
 
 va_lift2_merged_train_cfg.enable_wandb = True
 va_lift2_merged_train_cfg.load_worker = 16
-va_lift2_merged_train_cfg.save_interval = 1000
+va_lift2_merged_train_cfg.save_interval = 200
 va_lift2_merged_train_cfg.gc_interval = 50
 va_lift2_merged_train_cfg.cfg_prob = 0.1
+
+va_lift2_merged_train_cfg.resume_from = os.path.join(
+    '/soft/wangxi/4DWAM/lingbot-va/checkpoints',
+    'lift2_merged_lingbot_va',
+    'train_8_8_5000',
+    'checkpoints',
+    'checkpoint_step_2000',
+)
 
 va_lift2_merged_train_cfg.learning_rate = 1e-5
 va_lift2_merged_train_cfg.beta1 = 0.9
@@ -77,7 +85,7 @@ va_lift2_merged_train_cfg.weight_decay = 0.1
 va_lift2_merged_train_cfg.warmup_steps = 10
 va_lift2_merged_train_cfg.batch_size = 1
 va_lift2_merged_train_cfg.gradient_accumulation_steps = 8
-va_lift2_merged_train_cfg.num_steps = 20000
+va_lift2_merged_train_cfg.num_steps = 5000
 va_lift2_merged_train_cfg.align_layer = 20
 
 va_lift2_merged_train_cfg.keyword = 'lift2_merged_lingbot_va'

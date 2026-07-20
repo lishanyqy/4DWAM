@@ -12,6 +12,9 @@ from .config4dwam.train4dwam_long285_test import lingbot4dwam_train_cfg as train
 from .config4dwam.train4dwam_mix285_235_test import (
     lingbot4dwam_train_cfg as train_4dwam_mix285_235_test,
 )
+from .config4dwam.train4dwam_longest50_test import (
+    lingbot4dwam_train_cfg as train_4dwam_longest50_test,
+)
 from .config4dwam.train4dwam_lift2_merged import lingbot4dwam_train_cfg as train_4dwam_lift2_merged
 from .config4dwam.train4dwam_test import lingbot4dwam_train_cfg as train_4dwam_test
 
@@ -28,6 +31,7 @@ VA_CONFIGS = {
     '4dwam_long185_test': train_4dwam_long185_test,
     '4dwam_long285_test': train_4dwam_long285_test,
     '4dwam_mix285_235_test': train_4dwam_mix285_235_test,
+    '4dwam_longest50_test': train_4dwam_longest50_test,
     '4dwam_lift2_merged': train_4dwam_lift2_merged,
     '4dwam_test': train_4dwam_test,
 }

@@ -55,7 +55,7 @@ lingbot4dwam_train_cfg.empty_emb_path = os.path.join(
 )
 lingbot4dwam_train_cfg.enable_wandb = True
 lingbot4dwam_train_cfg.load_worker = 16
-lingbot4dwam_train_cfg.save_interval = 1000
+lingbot4dwam_train_cfg.save_interval = 200
 lingbot4dwam_train_cfg.gc_interval = 50
 lingbot4dwam_train_cfg.cfg_prob = 0.1
 
@@ -78,8 +78,8 @@ lingbot4dwam_train_cfg.beta2 = 0.95
 lingbot4dwam_train_cfg.weight_decay = 0.1
 lingbot4dwam_train_cfg.warmup_steps = 10
 lingbot4dwam_train_cfg.batch_size = 1
-lingbot4dwam_train_cfg.gradient_accumulation_steps = 8
-lingbot4dwam_train_cfg.num_steps = 20000
+lingbot4dwam_train_cfg.gradient_accumulation_steps = 16
+lingbot4dwam_train_cfg.num_steps = 25000
 lingbot4dwam_train_cfg.align_layer = 20
 lingbot4dwam_train_cfg.keyword = (
     f'lift2_merged_4DWAM_{lingbot4dwam_train_cfg.align_layer}'
@@ -100,7 +100,11 @@ lingbot4dwam_train_cfg.enable_trace = True
 lingbot4dwam_train_cfg.trace_coef = 0.01
 
 lingbot4dwam_train_cfg.loss_weights = {
-    'dest_loss': 0.01,
+    'dest_loss': 0.05,
     'motion_loss': 0.01,
     'trace_loss': 0.01,
 }
+
+# For real limitation
+lingbot4dwam_train_cfg.train_num_frames = 32
+lingbot4dwam_train_cfg.random_frame_window = True
