@@ -51,11 +51,11 @@ if (
 #     --output-path <data_path>/empty_emb_64.pt
 lingbot4dwam_train_cfg.empty_emb_path = os.path.join(
     lingbot4dwam_train_cfg.data_path,
-    'empty_emb_64.pt',
+    'empty_emb_128.pt',
 )
 lingbot4dwam_train_cfg.enable_wandb = True
 lingbot4dwam_train_cfg.load_worker = 16
-lingbot4dwam_train_cfg.save_interval = 200
+lingbot4dwam_train_cfg.save_interval = 500
 lingbot4dwam_train_cfg.gc_interval = 50
 lingbot4dwam_train_cfg.cfg_prob = 0.1
 
@@ -63,13 +63,13 @@ lingbot4dwam_train_cfg.cache_path = os.environ.get(
     'CACHE_PATH',
     '/soft/wangxi/.cache',
 )
-lingbot4dwam_train_cfg.wan22_pretrained_model_name_or_path = os.path.join(
-    lingbot4dwam_train_cfg.cache_path,
-    'huggingface/hub/models--robbyant--lingbot-va-base/snapshots/68b7bc1b35da6ddc67ea94c4ceb58d768fbb3f9c',
-)
+# lingbot4dwam_train_cfg.wan22_pretrained_model_name_or_path = os.path.join(
+#     lingbot4dwam_train_cfg.cache_path,
+#     'huggingface/hub/models--robbyant--lingbot-va-base/snapshots/68b7bc1b35da6ddc67ea94c4ceb58d768fbb3f9c',
+# )
 
 # To resume training, set this to a checkpoint directory.
-# lingbot4dwam_train_cfg.resume_from = '/path/to/checkpoint_step_XXXX/'
+lingbot4dwam_train_cfg.resume_from = '/soft/wangxi/4DWAM/lingbot-va/checkpoints/lift2_merged_lingbot_va/train_8_8_5000_resume_from_2000/checkpoints/checkpoint_step_1000'
 
 # Training parameters.
 lingbot4dwam_train_cfg.learning_rate = 1e-5
@@ -79,7 +79,7 @@ lingbot4dwam_train_cfg.weight_decay = 0.1
 lingbot4dwam_train_cfg.warmup_steps = 10
 lingbot4dwam_train_cfg.batch_size = 1
 lingbot4dwam_train_cfg.gradient_accumulation_steps = 16
-lingbot4dwam_train_cfg.num_steps = 25000
+lingbot4dwam_train_cfg.num_steps = 50000
 lingbot4dwam_train_cfg.align_layer = 20
 lingbot4dwam_train_cfg.keyword = (
     f'lift2_merged_4DWAM_{lingbot4dwam_train_cfg.align_layer}'
@@ -93,14 +93,14 @@ lingbot4dwam_train_cfg.save_root = os.path.join(
         f'{lingbot4dwam_train_cfg.num_steps}'
     ),
 )
-lingbot4dwam_train_cfg.max_tokens = 64
+lingbot4dwam_train_cfg.max_tokens = 512
 
 # 4D WAM hyperparameters.
 lingbot4dwam_train_cfg.enable_trace = True
 lingbot4dwam_train_cfg.trace_coef = 0.01
 
 lingbot4dwam_train_cfg.loss_weights = {
-    'dest_loss': 0.05,
+    'dest_loss': 0.03,
     'motion_loss': 0.01,
     'trace_loss': 0.01,
 }
