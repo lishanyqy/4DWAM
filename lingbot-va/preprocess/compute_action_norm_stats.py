@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 from typing import Any, Literal
 
@@ -29,15 +28,6 @@ import pandas as pd
 import torch
 from scipy.spatial.transform import Rotation
 from tqdm import tqdm
-
-
-SCRIPT_PATH = Path(__file__).resolve()
-LINGBOT_VA_ROOT = SCRIPT_PATH.parents[1]
-WAN_VA_ROOT = LINGBOT_VA_ROOT / "wan_va"
-if str(WAN_VA_ROOT) not in sys.path:
-    sys.path.insert(0, str(WAN_VA_ROOT))
-
-from utils.geometry import euler2quat  # noqa: E402
 
 
 PoseMode = Literal["segment-relative", "stored"]
@@ -53,6 +43,11 @@ DEFAULT_USED_ACTION_CHANNEL_IDS = (
     + list(range(7, 14))
     + list(range(29, 30))
 )
+MODEL_ACTION_DIMENSION = 30
+EEF_EULER_ACTION_DIMENSION = 14
+EEF_QUATERNION_ACTION_DIMENSION = 16
+LEFT_GRIPPER_MODEL_CHANNEL = 28
+RIGHT_GRIPPER_MODEL_CHANNEL = 29
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -219,28 +214,53 @@ def load_latent_frame_ids(
 
 
 def convert_xyz_euler_actions_to_quaternions(actions: np.ndarray) -> np.ndarray:
-    converted_actions: list[np.ndarray] = []
-    for action in actions:
-        left_quaternion = euler2quat(action[3], action[4], action[5])
-        right_quaternion = euler2quat(action[10], action[11], action[12])
-        converted_actions.append(
-            np.concatenate(
-                [
-                    action[:3],
-                    left_quaternion,
-                    action[6:7],
-                    action[7:10],
-                    right_quaternion,
-                    action[13:14],
-                ]
-            )
+    """Match LatentLeRobotDataset's 14D Euler to 16D XYZW conversion."""
+    actions = np.asarray(actions, dtype=np.float64)
+    if actions.ndim != 2 or actions.shape[1] != EEF_EULER_ACTION_DIMENSION:
+        raise ValueError(
+            "Expected EEF Euler actions with shape [T, 14], got "
+            f"{actions.shape}"
         )
-    converted_array = np.stack(converted_actions, axis=0).astype(np.float64)
-    if converted_array.shape[1] != 16:
+    if not np.isfinite(actions).all():
+        raise ValueError("EEF Euler actions contain NaN or Inf values.")
+
+    left_quaternions_xyzw = Rotation.from_euler(
+        "xyz", actions[:, 3:6]
+    ).as_quat()
+    right_quaternions_xyzw = Rotation.from_euler(
+        "xyz", actions[:, 10:13]
+    ).as_quat()
+
+    converted_actions = np.concatenate(
+        [
+            actions[:, :3],
+            left_quaternions_xyzw,
+            actions[:, 6:7],
+            actions[:, 7:10],
+            right_quaternions_xyzw,
+            actions[:, 13:14],
+        ],
+        axis=1,
+    )
+    if converted_actions.shape[1] != EEF_QUATERNION_ACTION_DIMENSION:
         raise AssertionError(
-            f"Expected converted action width 16, got {converted_array.shape}"
+            "Expected converted action width 16, got "
+            f"{converted_actions.shape}"
         )
-    return converted_array
+
+    quaternion_norms = np.concatenate(
+        [
+            np.linalg.norm(converted_actions[:, 3:7], axis=1),
+            np.linalg.norm(converted_actions[:, 11:15], axis=1),
+        ]
+    )
+    if not np.allclose(quaternion_norms, 1.0, rtol=1e-7, atol=1e-7):
+        raise AssertionError(
+            "Euler-to-quaternion conversion produced non-unit quaternions: "
+            f"min_norm={quaternion_norms.min()}, "
+            f"max_norm={quaternion_norms.max()}"
+        )
+    return converted_actions
 
 
 def convert_pose_to_segment_relative(pose: np.ndarray) -> np.ndarray:
@@ -255,7 +275,23 @@ def convert_pose_to_segment_relative(pose: np.ndarray) -> np.ndarray:
 
 def build_inverse_action_channel_ids() -> np.ndarray:
     active_action_width = len(DEFAULT_USED_ACTION_CHANNEL_IDS)
-    inverse_channel_ids = np.full(30, active_action_width, dtype=np.int64)
+    if active_action_width != EEF_QUATERNION_ACTION_DIMENSION:
+        raise AssertionError(
+            "The canonical mapping must contain 16 active action channels, got "
+            f"{active_action_width}"
+        )
+    if DEFAULT_USED_ACTION_CHANNEL_IDS[7] != LEFT_GRIPPER_MODEL_CHANNEL:
+        raise AssertionError("16D action channel 7 must map to left gripper channel 28.")
+    if DEFAULT_USED_ACTION_CHANNEL_IDS[15] != RIGHT_GRIPPER_MODEL_CHANNEL:
+        raise AssertionError("16D action channel 15 must map to right gripper channel 29.")
+    if len(set(DEFAULT_USED_ACTION_CHANNEL_IDS)) != active_action_width:
+        raise AssertionError("Active model action channel IDs must be unique.")
+
+    inverse_channel_ids = np.full(
+        MODEL_ACTION_DIMENSION,
+        active_action_width,
+        dtype=np.int64,
+    )
     for active_channel_index, model_channel_index in enumerate(
         DEFAULT_USED_ACTION_CHANNEL_IDS
     ):
@@ -321,10 +357,21 @@ def process_segment_actions(
         constant_values=0,
     )
     model_actions = actions_with_dummy_channel[:, inverse_action_channel_ids]
-    if model_actions.shape[1] != 30:
+    if model_actions.shape[1] != MODEL_ACTION_DIMENSION:
         raise AssertionError(
-            f"Expected canonical action width 30, got {model_actions.shape}"
+            "Expected canonical action width 30, got "
+            f"{model_actions.shape}"
         )
+    if not np.array_equal(model_actions[:, 28], aligned_actions[:, 7]):
+        raise AssertionError("Left gripper was not mapped to model channel 28.")
+    if not np.array_equal(model_actions[:, 29], aligned_actions[:, 15]):
+        raise AssertionError("Right gripper was not mapped to model channel 29.")
+
+    unused_model_channels = sorted(
+        set(range(MODEL_ACTION_DIMENSION)) - set(DEFAULT_USED_ACTION_CHANNEL_IDS)
+    )
+    if np.any(model_actions[:, unused_model_channels] != 0.0):
+        raise AssertionError("Unused model action channels must remain zero.")
     return model_actions
 
 
@@ -433,6 +480,8 @@ def write_statistics(
             "pose_mode": pose_mode,
             "model_action": "30d_canonical_bimanual_xyz_quaternion_gripper",
             "quaternion_order": "xyzw",
+            "euler_axes": "xyz",
+            "quaternion_conversion": "scipy.spatial.transform.Rotation.from_euler",
             "camera_key_for_frame_ids": camera_key,
             "used_action_channel_ids": DEFAULT_USED_ACTION_CHANNEL_IDS,
             "includes_training_leading_padding": True,
