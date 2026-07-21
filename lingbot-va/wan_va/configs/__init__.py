@@ -2,6 +2,8 @@
 from .va_franka_cfg import va_franka_cfg
 from .va_franka_i2va import va_franka_i2va_cfg
 from .va_robotwin_cfg import va_robotwin_cfg
+from .real_eef14_cfg import real_eef14_cfg
+from .real_eef14_train_cfg import real_eef14_train_cfg
 from .va_robotwin_i2va import va_robotwin_i2va_cfg
 from .va_robotwin_train_cfg import va_robotwin_train_cfg
 
@@ -15,5 +17,7 @@ VA_CONFIGS = {
     'robotwin_i2av': va_robotwin_i2va_cfg,
     'franka_i2av': va_franka_i2va_cfg,
     'robotwin_train': va_robotwin_train_cfg,
+    
     '4dwam': train_4dwam,
+    'real_eef14_train': real_eef14_train_cfg,
 }

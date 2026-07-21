@@ -3,10 +3,10 @@ import os
 
 from easydict import EasyDict
 
-from ..va_robotwin_train_cfg import va_robotwin_cfg
-
+# from ..va_robotwin_train_cfg import va_robotwin_cfg
+from ..real_eef14_train_cfg import real_eef14_cfg
 lingbot4dwam_train_cfg = EasyDict(__name__='Config: VA robotwin task10 train')
-lingbot4dwam_train_cfg.update(va_robotwin_cfg)
+lingbot4dwam_train_cfg.update(real_eef14_cfg)
 
 # Please fill dataset_path
 lingbot4dwam_train_cfg.data_path = '/data/.cache/datasets/lerobot/robotwin/'
