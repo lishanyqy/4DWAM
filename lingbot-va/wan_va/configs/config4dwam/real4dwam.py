@@ -3,10 +3,10 @@ import os
 
 from easydict import EasyDict
 
-from ..va_robotwin_train_cfg import va_robotwin_cfg
-
+# from ..va_robotwin_train_cfg import va_robotwin_cfg
+from ..real_eef14_train_cfg import real_eef14_cfg
 lingbot4dwam_train_cfg = EasyDict(__name__='Config: VA robotwin task10 train')
-lingbot4dwam_train_cfg.update(va_robotwin_cfg)
+lingbot4dwam_train_cfg.update(real_eef14_cfg)
 
 # Please fill dataset_path
 lingbot4dwam_train_cfg.data_path = '/data/.cache/datasets/lerobot/robotwin/'
@@ -19,9 +19,6 @@ lingbot4dwam_train_cfg.save_interval = 1000
 lingbot4dwam_train_cfg.gc_interval = 50
 lingbot4dwam_train_cfg.cfg_prob = 0.1
 # Please fill lingbot-va base path
-lingbot4dwam_train_cfg.cache_path = os.environ.get(
-    "CACHE_PATH", "/soft/wangxi/.cache"
-)
 lingbot4dwam_train_cfg.wan22_pretrained_model_name_or_path = os.path.join(lingbot4dwam_train_cfg.cache_path, 'modelscope/hub/models/robbyant/lingbot-va-base/')
 # if resume
 # lingbot4dwam_train_cfg.resume_from = os.path.join('/data/lingbot/ckpt/ta_4_16_50000/checkpoints/checkpoint_step_2000/')
@@ -40,7 +37,6 @@ lingbot4dwam_train_cfg.keyword = f'4DWAM_{lingbot4dwam_train_cfg.align_layer}'
 # Change your save_root
 lingbot4dwam_train_cfg.save_root = f"/data/lingbot/{lingbot4dwam_train_cfg.keyword}/train_{int(64/lingbot4dwam_train_cfg.gradient_accumulation_steps)}_{lingbot4dwam_train_cfg.gradient_accumulation_steps}_{lingbot4dwam_train_cfg.num_steps}"
 lingbot4dwam_train_cfg.max_tokens = 512
-
 
 
 # 4D WAM Hyper-Parameter

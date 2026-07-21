@@ -2,6 +2,8 @@
 from .va_franka_cfg import va_franka_cfg
 from .va_franka_i2va import va_franka_i2va_cfg
 from .va_robotwin_cfg import va_robotwin_cfg
+from .real_eef14_cfg import real_eef14_cfg
+from .real_eef14_train_cfg import real_eef14_train_cfg
 from .va_robotwin_i2va import va_robotwin_i2va_cfg
 from .va_robotwin_train_cfg import va_robotwin_train_cfg
 from .va_lift2_merged_train_cfg import va_lift2_merged_train_cfg
@@ -38,4 +40,5 @@ VA_CONFIGS = {
     '4dwam_longest50_test': train_4dwam_longest50_test,
     '4dwam_lift2_merged': train_4dwam_lift2_merged,
     '4dwam_test': train_4dwam_test,
+    'real_eef14_train': real_eef14_train_cfg,
 }

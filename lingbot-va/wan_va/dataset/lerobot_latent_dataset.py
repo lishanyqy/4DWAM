@@ -391,42 +391,6 @@ class LatentLeRobotDataset(LeRobotDataset):
         )
         return out_dict
     
-    def _action_post_process14(self, local_start_frame, local_end_frame, latent_frame_ids, action):
-        act_shift = int(latent_frame_ids[0] - local_start_frame)
-        frame_stride = latent_frame_ids[1] - latent_frame_ids[0]
-        action = action[act_shift:]
-        # left_action = get_relative_pose(action[:, :self.action_conf['left'][1]])
-        left_action = get_relative_joint_action(action[:, :self.action_conf['left'][1]])
-        # right_action = get_relative_pose(action[:, self.action_conf['right'][0]:self.action_conf['right'][1]])
-        right_action = get_relative_joint_action(action[:, self.action_conf['right'][0]:self.action_conf['right'][1]])
-        action = np.concatenate([left_action, action[:, self.action_conf['left_gripper'][0]:self.action_conf['left_gripper'][1]], right_action, action[:, self.action_conf['right_gripper'][0]:self.action_conf['right_gripper'][1]]], axis=1)
-        action = np.pad(action, pad_width=((frame_stride * 4, 0), (0, 0)), mode='constant', constant_values=0)
-
-        latent_frame_num = (len(latent_frame_ids) - 1) // 4 + 1
-        required_action_num = latent_frame_num * frame_stride * 4
-
-        action = action[:required_action_num]
-        action_mask = np.ones_like(action, dtype='bool')
-        assert action.shape[0] == required_action_num
-
-
-        action_paded = np.pad(action, ((0, 0), (0, 1)), mode='constant', constant_values=0)
-        action_mask_padded = np.pad(action_mask, ((0, 0), (0, 1)), mode='constant', constant_values=0)
-
-        action_aligned = action_paded[:, self.config.inverse_used_action_channel_ids] # here repeat to dim=30, len(inverse_used_action_channel_ids) = 30
-        action_mask_aligned = action_mask_padded[:, self.config.inverse_used_action_channel_ids]
-        # action_aligned = action_aligned - self.meta.episodes_stats
-        # action_aligned = (action_aligned - self.q01) / (
-        #         self.q99 - self.q01 + 1e-6) * 2. - 1.
-        action_aligned = (action_aligned - self.action_min) / (
-            self.action_max - self.action_min + 1e-6
-        ) * 2. - 1.
-
-        action_aligned = rearrange(action_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
-        action_mask_aligned = rearrange(action_mask_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
-        action_aligned *= action_mask_aligned
-        return torch.from_numpy(action_aligned).float(), torch.from_numpy(action_mask_aligned).bool()
-
     def action14_to_action16(self, action):
         """
         action: (F, 14)
@@ -456,6 +420,120 @@ class LatentLeRobotDataset(LeRobotDataset):
             out.append(a16)
 
         return np.stack(out, axis=0)
+
+    def action14_eef_euler_to_action16_xyzw(self, action):
+        """
+        Convert 14-dim EEF Euler actions to 16-dim EEF quaternion actions.
+
+        Input order:
+        [left_xyz(3), left_euler_xyz(3), left_grip(1),
+         right_xyz(3), right_euler_xyz(3), right_grip(1)]
+
+        Output order:
+        [left_xyz(3), left_quat_xyzw(4), left_grip(1),
+         right_xyz(3), right_quat_xyzw(4), right_grip(1)]
+        """
+        action = np.asarray(action)
+        assert action.ndim == 2 and action.shape[1] == 14
+
+        left_quat = R.from_euler("xyz", action[:, 3:6]).as_quat()
+        right_quat = R.from_euler("xyz", action[:, 10:13]).as_quat()
+
+        return np.concatenate(
+            [
+                action[:, :3],
+                left_quat,
+                action[:, 6:7],
+                action[:, 7:10],
+                right_quat,
+                action[:, 13:14],
+            ],
+            axis=1,
+        )
+
+    def _action_post_process_new(self, local_start_frame, latent_frame_ids, action):
+        if action.shape[1] == 14:
+            action = self.action14_eef_euler_to_action16_xyzw(action)
+        elif action.shape[1] != 16:
+            raise ValueError(f"Expected 14-dim EEF Euler or 16-dim EEF quaternion action, got {action.shape}")
+
+        act_shift = int(latent_frame_ids[0] - local_start_frame)
+        frame_stride = latent_frame_ids[1] - latent_frame_ids[0]
+        action = action[act_shift:]
+
+        if self.config.env_type == 'robotwin_tshape':
+            left_action = get_relative_pose(action[:, :7])
+            right_action = get_relative_pose(action[:, 8:15])
+            action = np.concatenate(
+                [left_action, action[:, 7:8], right_action, action[:, 15:16]],
+                axis=1,
+            )
+
+        action = np.pad(action, pad_width=((frame_stride * 4, 0), (0, 0)), mode='constant', constant_values=0)
+
+        latent_frame_num = (len(latent_frame_ids) - 1) // 4 + 1
+        required_action_num = latent_frame_num * frame_stride * 4
+
+        action = action[:required_action_num]
+        action_mask = np.ones_like(action, dtype='bool')
+        assert action.shape[0] == required_action_num
+
+        action_paded = np.pad(action, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+        action_mask_padded = np.pad(action_mask, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+
+        action_aligned = action_paded[:, self.config.inverse_used_action_channel_ids]
+        action_mask_aligned = action_mask_padded[:, self.config.inverse_used_action_channel_ids]
+        action_aligned = (action_aligned - self.q01) / (
+                self.q99 - self.q01 + 1e-6) * 2. - 1.
+        action_aligned = rearrange(action_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
+        action_mask_aligned = rearrange(action_mask_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
+        action_aligned *= action_mask_aligned
+        return torch.from_numpy(action_aligned).float(), torch.from_numpy(action_mask_aligned).bool()
+
+    def _action_post_process_eef14_raw_new(self, local_start_frame, latent_frame_ids, action):
+        """
+        Process 14-dim EEF Euler actions without converting to quaternions.
+
+        Input/order:
+        [left_xyz(3), left_euler_xyz(3), left_grip(1),
+         right_xyz(3), right_euler_xyz(3), right_grip(1)]
+
+        Output is aligned to the first 14 channels of the 30-dim action canvas.
+        Channels 14..29 are padding/masked out. This matches norm_stat layouts
+        whose q01/q99 have real values in 0..13 and zeros afterward.
+        """
+        action = np.asarray(action)
+        assert action.ndim == 2 and action.shape[1] == 14
+
+        act_shift = int(latent_frame_ids[0] - local_start_frame)
+        frame_stride = latent_frame_ids[1] - latent_frame_ids[0]
+        action = action[act_shift:]
+
+        action = np.pad(action, pad_width=((frame_stride * 4, 0), (0, 0)), mode='constant', constant_values=0)
+
+        latent_frame_num = (len(latent_frame_ids) - 1) // 4 + 1
+        required_action_num = latent_frame_num * frame_stride * 4
+
+        action = action[:required_action_num]
+        action_mask = np.ones_like(action, dtype='bool')
+        assert action.shape[0] == required_action_num
+
+        action_paded = np.pad(action, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+        action_mask_padded = np.pad(action_mask, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+
+        pad_idx = action.shape[1]
+        inverse_ids = list(range(action.shape[1])) + [pad_idx] * (
+            self.config.action_dim - action.shape[1]
+        )
+        action_aligned = action_paded[:, inverse_ids]
+        action_mask_aligned = action_mask_padded[:, inverse_ids]
+
+        action_aligned = (action_aligned - self.q01) / (
+                self.q99 - self.q01 + 1e-6) * 2. - 1.
+        action_aligned = rearrange(action_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
+        action_mask_aligned = rearrange(action_mask_aligned, "(f n) c -> c f n 1", f=latent_frame_num)
+        action_aligned *= action_mask_aligned
+        return torch.from_numpy(action_aligned).float(), torch.from_numpy(action_mask_aligned).bool()
 
     def _action_post_process(self, local_start_frame, local_end_frame, latent_frame_ids, action):
         if not torch.is_tensor(action):
@@ -579,9 +657,8 @@ class LatentLeRobotDataset(LeRobotDataset):
         # pdb.set_trace()
         out_dict = self._cat_video_latents(ori_data_dict)
 
-        out_dict['actions'], out_dict['actions_mask'] = self._action_post_process(
+        out_dict['actions'], out_dict['actions_mask'] = self._action_post_process_new(
             local_start_frame,
-            local_end_frame,
             latent_frame_ids,
             ori_data_dict['action'],
         )
