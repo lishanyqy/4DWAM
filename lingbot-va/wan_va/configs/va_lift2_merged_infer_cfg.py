@@ -46,9 +46,12 @@ va_lift2_merged_infer_cfg.port = 7777
 va_lift2_merged_infer_cfg.env_type = 'robotwin_tshape'
 va_lift2_merged_infer_cfg.height = 256
 va_lift2_merged_infer_cfg.width = 320
-va_lift2_merged_infer_cfg.frame_chunk_size = 2
+va_lift2_merged_infer_cfg.frame_chunk_size = 4
 va_lift2_merged_infer_cfg.action_per_frame = 16
 va_lift2_merged_infer_cfg.action_dim = 30
+
+va_lift2_merged_infer_cfg.num_inference_steps = 5
+va_lift2_merged_infer_cfg.action_num_inference_steps = 10
 
 va_lift2_merged_infer_cfg.vae_path = _BASE_MODEL_ROOT
 va_lift2_merged_infer_cfg.text_model_path = _BASE_MODEL_ROOT
