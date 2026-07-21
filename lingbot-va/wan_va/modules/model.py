@@ -39,8 +39,8 @@ def custom_sdpa(q, k, v):
                                          v.transpose(1, 2))
     return out.transpose(1, 2)
 
-MAX_TEXT_LEN = 128
-# MAX_TEXT_LEN = 512
+# MAX_TEXT_LEN = 128
+MAX_TEXT_LEN = 512
 
 class FlexAttnFunc(nn.Module):
     flex_attn: ClassVar[Callable] = torch.compile(
