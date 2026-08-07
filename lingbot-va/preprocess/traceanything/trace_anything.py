@@ -95,7 +95,7 @@ def evaluate_bspline_conf(ctrl_pts3d, ctrl_conf, t_values):
     conf_t  = torch.sum(basis * ctrl_conf.unsqueeze(0),  dim=1).squeeze(1)           # [T,H,W]
     return pts3d_t, conf_t
 
-# ======== Encoders（仅 CroCo） ========
+# ======== Encoders (CroCo only) ========
 class CroCoEncoder(nn.Module):
     def __init__(
         self,
@@ -266,7 +266,7 @@ class TraceAnything(nn.Module):
         # B: batch size
         B = views[0]["img"].shape[0]
 
-        # bool，判断所有 view 的图像 shape 是否一致
+        # Boolean flag indicating whether all view image shapes are identical.
         same_shape = all(v["img"].shape == views[0]["img"].shape for v in views)
         if same_shape:
             imgs = torch.cat([v["img"] for v in views], dim=0)
@@ -274,7 +274,7 @@ class TraceAnything(nn.Module):
             # v["img"].shape[-2:] -> (H, W)
             # torch.tensor(...)[None] -> (1, 2)
             # repeat(B,1) -> (B, 2)
-            # 拼接后 true_shapes: (V*B, 2)
+            # true_shapes after concatenation: (V*B, 2)
             true_shapes = torch.cat([v.get("true_shape", torch.tensor(v["img"].shape[-2:])[None].repeat(B, 1)) for v in views], dim=0)
             feats_chunks, pos_chunks = [], []
             for s in range(0, imgs.shape[0], chunk_size):
@@ -300,7 +300,7 @@ class TraceAnything(nn.Module):
         # B: batch size
         B = views[0].shape[0]
 
-        # bool，判断所有 view 的图像 shape 是否一致
+        # Boolean flag indicating whether all view image shapes are identical.
         same_shape = all(v.shape == views[0].shape for v in views)
         if same_shape:
             imgs = torch.cat(views, dim=0)
@@ -308,7 +308,7 @@ class TraceAnything(nn.Module):
             # v["img"].shape[-2:] -> (H, W)
             # torch.tensor(...)[None] -> (1, 2)
             # repeat(B,1) -> (B, 2)
-            # 拼接后 true_shapes: (V*B, 2)
+            # true_shapes after concatenation: (V*B, 2)
             true_shapes = torch.cat([torch.tensor(v.shape[-2:])[None].repeat(B, 1) for v in views], dim=0)
             feats_chunks, pos_chunks = [], []
             for s in range(0, imgs.shape[0], chunk_size):

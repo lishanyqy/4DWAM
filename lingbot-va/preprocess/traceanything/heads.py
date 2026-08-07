@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from .layers.dpt_block import DPTOutputAdapter  # 本地化
+from .layers.dpt_block import DPTOutputAdapter  # Localized copy
 
 
 def _resolve_hw(img_info):

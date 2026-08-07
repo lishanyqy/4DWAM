@@ -1,10 +1,10 @@
-<h1 align="center">4D-WAM: Infusing Spatial Awareness into World Action Model through 4D Trajectory Fields</h1>
+<h1 align="center">4D-WAM: Infusing Spatial Awareness into World Action Model through Trajectory Fields</h1>
 
 
 # 📦 Model Download
 - **Pretrained Checkpoints for Post-Training**
 
-请下载以下模型以用于后训练。
+Download the following models for post-training.
 
 | Model Name | Huggingface Repository | ModelScope Repository  | Description |
 | :--- | :--- | :--- | :--- |
@@ -72,7 +72,7 @@ huggingface-cli download --repo-type dataset robbyant/robotwin-clean-and-aug-ler
 
 ### Custom Dataset Preparation
 
-step1到step3是lingbot-va的数据集处理的常规步骤，如果lingbot-va格式的预处理已经完成了，请直接查看step4
+Steps 1 through 3 are the standard LingBot-VA dataset preprocessing steps. If preprocessing into the LingBot-VA format has already been completed, skip directly to Step 4.
 
 We provide a script for lerobot dataset generate latent style lerobot dataset, which is fulfill requirements of Lingbot-VA. Download WAN2.2 components (VAE2.2, T5Encoder) and move them in one directory before running. This step covers step1~step3.
 
@@ -163,18 +163,18 @@ The latent file naming convention `episode_{index}_{start_frame}_{end_frame}.pth
 
 (1) Download Pretrained TraceAnything Model from Huggingface [Traceanything](https://huggingface.co/depth-anything/trace-anything)
 
-(2) 读取视频帧转成Traceanything features，确保server安装了ffmpeg.
+(2) Read video frames and convert them into TraceAnything features. Make sure `ffmpeg` is installed on the server.
 ```bash
 python preprocess/extract_trace_from_ta.py --dataset-root [DATASET_PATH] --ta-model-path [Traceanything_MODEL_DIR]
 ```
-多卡并行
+Multi-GPU parallel execution:
 ```bash
 python preprocess/extract_trace_from_ta.py --dataset-root [DATA_SET_PATH] --ta-model-path [Traceanything_MODEL_DIR] --devices cuda:0,cuda:1,cuda:2
 ```
-[DATASET_PATH]可以是单个任务的lerobot格式dataset，也可以是多任务的上级dataset目录。[Traceanything_MODEL_DIR]是目录，下面应该包含trace_anythng.pt\
-⚠️ Important: 这一步必须在完成Lingbot-VA数据的预处理后进行，因为我们会根据latents中抽取到的帧进行traceanything features提取。
+`[DATASET_PATH]` can point either to a single-task LeRobot-format dataset or to the parent directory of multiple task datasets. `[Traceanything_MODEL_DIR]` should be a directory containing `trace_anythng.pt`.\
+⚠️ Important: Run this step only after completing LingBot-VA data preprocessing, because TraceAnything feature extraction uses the frames selected during latent extraction.
 
-运行完成之后数据集目录下会出现一个trace/目录
+After the script finishes, a `trace/` directory will appear under the dataset directory:
 ```
 your_dataset/
 ├── videos/
@@ -197,11 +197,11 @@ your_dataset/
 ```
 
 ### Training
-(1) 官方Lingbot-VA训练的命令如下
+(1) Use the following command for official LingBot-VA training:
 ```bash
 NGPU=8 bash script/run_va_posttrain.sh
 ```
-(2) 4DWAM下训练的命令如下，读取的配置文件在wan_va/configs/config4dwam/train4dwam.py
+(2) Use the following command for 4D-WAM training. The loaded configuration file is `wan_va/configs/config4dwam/train4dwam.py`.
 ```bash
 NGPU=8 bash script/4dwam/run_posttrain.sh
 ```

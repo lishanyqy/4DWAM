@@ -304,7 +304,7 @@ We evaluate our model on both simulation benchmarks and real-world scenarios, an
 
 We are the first to propel RoboTwin 2.0 metrics performance past the 90+ threshold！
 <table style="border-collapse: collapse; width: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13px; line-height: 1.2;">
-<!-- 指标说明 -->
+<!-- Metric notes -->
   <p style="font-size: 12px; color: #666; margin-bottom: 5px;">* All metrics are reported in percentage (%). Higher values are <b>bolded</b>.</p>
   <thead>
     <tr style="border-top: 2px solid black; border-bottom: 1px solid black;">
@@ -346,7 +346,7 @@ We are the first to propel RoboTwin 2.0 metrics performance past the 90+ thresho
 - **LIBERO**
 
 <table style="border-collapse: collapse; width: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13px; line-height: 1.2;">
-<!-- 指标说明 -->
+<!-- Metric notes -->
   <p style="font-size: 12px; color: #666; margin-bottom: 5px;">* All metrics are reported in percentage (%). Higher values are <b>bolded</b>.</p>
   <thead>
     <tr style="border-top: 2px solid black; border-bottom: 1px solid black;">
@@ -397,12 +397,12 @@ manipulation (Fold Clothes, Fold Pants). Our method achieves state-of-the-art pe
 
 <div style="text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6;">
 
-  <!-- 第一部分：PS 说明 -->
+  <!-- Part 1: PS notes -->
   <div style="margin-bottom: 5px;"><strong>Progress Score (PS):</strong> The average score across all trials divided by the maximum possible score, expressed as a percentage:</div>
 
   PS = Average_Progress / Max_Steps &times; 100%
 
-  <!-- 第二部分：SR 说明 -->
+  <!-- Part 2: SR notes -->
   <div style="margin-bottom: 5px;"><strong>Success Rate (SR):</strong> The number of successful trials divided by the total number of trials, expressed as a percentage:</div>
 
   SR = Successful_Trials / N &times; 100%
@@ -412,7 +412,7 @@ manipulation (Fold Clothes, Fold Pants). Our method achieves state-of-the-art pe
 
 
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
-  <!-- 指标说明 -->
+  <!-- Metric notes -->
   <p style="font-size: 12px; color: #666; margin-bottom: 5px;">* All metrics are reported in percentage (%). Higher values are <b>bolded</b>.</p>
   
   <table style="border-collapse: collapse; width: auto; font-size: 13px; line-height: 1.2;">

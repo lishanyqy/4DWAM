@@ -1,16 +1,16 @@
-# 通用的server-client
+# General Server-Client Setup
 
 ## /Simple_Remote_Infer/deploy/qwenpi_policy.py
 
-- QwenPiServer: 一个用于示范的模型，拥有init和infer方法
+- QwenPiServer: an example model that provides `init` and `infer` methods.
 
-将加载好的模型用`WebsocketPolicyServer`包裹，并指定端口即可
+Wrap the loaded model with `WebsocketPolicyServer` and specify the port.
 
 ```python
 model_server = WebsocketPolicyServer(model, port=8002)
-model_server.serve_forever() # 开启监听
+model_server.serve_forever() # Start listening
 ```
 
 ## ./websocket_client_policy.py
 
-在`__main__()`中展示了如何创造一个假模型向真模型发送环境信息，只需要用`WebsocketClientPolicy`代替原有的模型即可
+The `__main__()` function shows how to create a dummy model that sends environment information to the real model. Replace the original model with `WebsocketClientPolicy` to use it.

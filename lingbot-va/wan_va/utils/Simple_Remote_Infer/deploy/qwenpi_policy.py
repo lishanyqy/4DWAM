@@ -345,7 +345,7 @@ class QwenPiServer:
 
     def init_norm(
             self,
-            states_path='/home/yangshuai/yangshuai_ssd0/checkpoint/qwen_pi0/norm_stats.json',
+            states_path='/home/YOUR_USERNAME/YOUR_USERNAME_ssd0/checkpoint/qwen_pi0/norm_stats.json',
             state_dim=14,
             action_dim=14):
         '''
@@ -380,7 +380,7 @@ class QwenPiServer:
         print(f"loading model from: {path_to_pi_model}")
         config = PreTrainedConfig.from_pretrained(path_to_pi_model)
 
-        base_model_path = '/home/yangshuai/yangshuai_ssd0/rep/VLA_pretraining/checkpoints/Qwen2.5-VL-3B-Instruct'
+        base_model_path = '/home/YOUR_USERNAME/YOUR_USERNAME_ssd0/rep/VLA_pretraining/checkpoints/Qwen2.5-VL-3B-Instruct'
 
         qwen_config = AutoConfig.from_pretrained(base_model_path)
         qwen_config.tokenizer_path = base_model_path
@@ -465,7 +465,7 @@ class QwenPiServer:
 if __name__ == "__main__":
 
     from .websocket_policy_server import WebsocketPolicyServer
-    PATH_TO_PI_MODEL = '/home/yangshuai/yangshuai_ssd0/checkpoint/qwen_pi0/stack_bowls_three-aloha-agilex_clean_50_rep/checkpoints/global_step_30000/hf_ckpt/'
+    PATH_TO_PI_MODEL = '/home/YOUR_USERNAME/YOUR_USERNAME_ssd0/checkpoint/qwen_pi0/stack_bowls_three-aloha-agilex_clean_50_rep/checkpoints/global_step_30000/hf_ckpt/'
 
     model = QwenPiServer(PATH_TO_PI_MODEL, use_length=50)
 

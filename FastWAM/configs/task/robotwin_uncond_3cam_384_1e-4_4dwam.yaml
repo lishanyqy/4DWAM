@@ -1,0 +1,31 @@
+# @package _global_
+
+defaults:
+  - override /data: robotwin_4dwam
+  # - override /model: fastwam
+  - override /model: fastwam_joint
+  - _self_
+
+# dataloading
+batch_size: 8
+num_workers: 16
+
+model:
+  mot_checkpoint_mixed_attn: false
+
+# scheduler
+lr_scheduler_type: "cosine"
+learning_rate: 1e-4
+num_epochs: 5
+max_steps: null
+log_every: 10
+save_every: 1000
+eval_every: 5000
+
+# training
+gradient_accumulation_steps: 16
+weight_decay: 1e-2
+resume: /data/checkpoints/fastwam/robotwin_uncond_3cam_384_1e-4_test/2026-05-29_10-16-38/checkpoints/weights/step_002000.pt
+trace_alignment_resume: /data/checkpoints/fastwam/robotwin_uncond_3cam_384_1e-4_test/2026-05-29_10-16-38/checkpoints/state/step_002000/pytorch_model/mp_rank_00_model_states.pt
+# resume: null
+# trace_alignment_resume: null

@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-从 LeRobot 的 episode_XXXXXX.parquet 里读取图像，
-用 Wan2.2 VAE + 文本编码器抽取 latent，
-并以 parquet 形式存到 latents/chunk-XXX/episode_XXXXXX.parquet 中。
+Read images from LeRobot episode_XXXXXX.parquet files,
+extract latents with the Wan2.2 VAE and text encoder,
+and save them as parquet files under latents/chunk-XXX/episode_XXXXXX.parquet.
 
-输入目录结构示例（--dataset-root）:
+Example input directory structure (--dataset-root):
 
 your_dataset/
 ├── data/
@@ -17,17 +17,17 @@ your_dataset/
 └── meta/
     └── episodes.jsonl
 
-输出目录结构：
+Output directory structure:
 
 your_dataset/
 ├── latents/
 │   └── chunk-000/
-│       ├── episode_000000.parquet   # 一行一个 action segment
+│       ├── episode_000000.parquet   # one action segment per row
 │       ├── episode_000001.parquet
 │       └── ...
 └── ...
 
-每行包含：
+Each row contains:
     - episode_index, start_frame, end_frame, frame_ids, text
     - latent_bytes, latent_dtype, latent_num_frames, latent_height, latent_width, latent_channels
     - text_emb_bytes, text_emb_dtype, text_emb_n, text_emb_d
@@ -58,7 +58,7 @@ from transformers import AutoTokenizer, T5TokenizerFast, UMT5EncoderModel
 
 from wan_va.modules.utils import WanVAEStreamingWrapper
 
-# =================== Wan2.2 相关：你需要填的 TODO ===================
+# =================== Wan2.2 TODOs to fill in ===================
 
 # image_keys = {
 #     'observation.images.cam_high':[],
@@ -217,7 +217,7 @@ def build_wan2_2_components(models_root: Path,text_length, device: torch.device)
    
     return vae, text_model
 
-    示意伪代码（不要直接运行）:
+    Example pseudocode (do not run directly):
     ----------------------------------------------------------------
     """
     if _has_hf_component_layout(models_root):
@@ -237,7 +237,7 @@ def build_wan2_2_components(models_root: Path,text_length, device: torch.device)
         )
         return vae, text_encoder
 
-    # raise NotImplementedError("请在 build_wan2_2_components 里加载 Wan2.2 模型")
+    # raise NotImplementedError("Load the Wan2.2 model in build_wan2_2_components")
     # vae_ckpt = models_root / "Wan2.2-TI2V-5B" / "Wan2.2_VAE.pth"
     vae_ckpt = models_root / "Wan2.2_VAE.pth"
     text_ckpt = models_root / "models_t5_umt5-xxl-enc-bf16.pth"
@@ -265,7 +265,7 @@ def encode_video_with_vae(
     vae, video_tensor: torch.Tensor, device: torch.device
 ) -> torch.Tensor:
     """
-    用 Wan2.2 的 VAE 编码视频。
+    Encode video with the Wan2.2 VAE.
 
     inputs:
         video_tensor: [T, 3, H, W], float32, [0,1]
@@ -274,7 +274,7 @@ def encode_video_with_vae(
 
     TODO: VAE Model extract the latents
 
-    示意伪代码:
+    Example pseudocode:
 
     ----------------------------------------------------------------
     video_tensor = video_tensor.to(device=device, dtype=torch.bfloat16)
@@ -292,12 +292,12 @@ def encode_text(
     text_encoder, text: str, device: torch.device
 ) -> torch.Tensor:
     """
-    用 Wan2.2 文本编码器编码 action_text。
+    Encode action_text with the Wan2.2 text encoder.
 
-    返回:
-        text_emb: [L, D] 或 [1, D]
+    Returns:
+        text_emb: [L, D] or [1, D]
 
-    TODO: 换成你自己的文本编码代码。
+    TODO: Replace this with your own text encoding code.
 
     ----------------------------------------------------------------
     tokens = tokenizer(
@@ -317,10 +317,10 @@ def encode_text(
     return text_emb
 
 
-# ============================ 工具函数 ============================
+# ============================ Utility functions ============================
 
 def tensor_to_bytes(t: torch.Tensor) -> Tuple[bytes, str]:
-    """convert tensor to bytes (bytes, dtype_str)。"""
+    """Convert tensor to bytes as (bytes, dtype_str)."""
     t_cpu = t.detach().cpu()
     if t_cpu.dtype == torch.bfloat16:
         # convert to 32
@@ -332,7 +332,7 @@ def tensor_to_bytes(t: torch.Tensor) -> Tuple[bytes, str]:
 
 
 def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
-    """读取 meta/episodes.jsonl -> {episode_index: meta_dict}"""
+    """Read meta/episodes.jsonl -> {episode_index: meta_dict}."""
     mapping: Dict[int, Dict[str, Any]] = {}
     with meta_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -346,7 +346,7 @@ def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
 
 
 def get_chunk_name(episode_index: int, episodes_per_chunk: int) -> str:
-    """根据 episode_index 推 chunk 名（例如 500 个一块）"""
+    """Infer the chunk name from episode_index, for example with 500 episodes per chunk."""
     chunk_id = episode_index // episodes_per_chunk
     return f"chunk-{chunk_id:03d}"
 
@@ -524,16 +524,16 @@ def process_dataset(
             N, _, H_res, W_res = frames.shape
             u = frames.permute(1, 0, 2, 3).contiguous()
             u = u.to(device)
-            # VAE 编码
+            # VAE encoding
             latents = encode_video_with_vae(vae, [u], device=device)[0]
             if latents.dim() != 4:
                 raise RuntimeError(
                     f"VAE latent shape expected 4D [N,C,H,W], got {latents.shape}"
                 )
             z_dim, T_lat, H_lat, W_lat = latents.shape
-            # assert N_lat == N, "latent_num_frames != frame_ids 数量，请检查 VAE encode"
+            # assert N_lat == N, "latent_num_frames != number of frame_ids; check VAE encoding"
             # latents_bf16 = latents.to(dtype=torch.bfloat16)
-            # bfloat16 & flatten 成 [N * H_lat * W_lat, C_lat]
+            # Convert to bfloat16 and flatten into [N * H_lat * W_lat, C_lat].
             latents_bf16 = latents.to(dtype=torch.bfloat16)
             latent_flat = (
                 latents_bf16.permute(1, 2, 3, 0)
@@ -637,7 +637,7 @@ def main():
         "--episodes-per-chunk",
         type=int,
         default=500,
-        help="Each chunk 的 episode 数量，用于从 episode_index 计算 chunk-XXX 名",
+        help="Number of episodes in each chunk, used to compute the chunk-XXX name from episode_index",
     )
     parser.add_argument(
         "--ori-fps",

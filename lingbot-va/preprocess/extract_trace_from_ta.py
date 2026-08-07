@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-从 LeRobot 的 episode_XXXXXX.parquet 里读取图像，
-用 Wan2.2 VAE + 文本编码器抽取 latent，
-并以 parquet 形式存到 latents/chunk-XXX/episode_XXXXXX.parquet 中。
+Read images from LeRobot episode_XXXXXX.parquet files,
+extract latents with the Wan2.2 VAE and text encoder,
+and save them as parquet files under latents/chunk-XXX/episode_XXXXXX.parquet.
 
-输入目录结构示例（--dataset-root）:
+Example input directory structure (--dataset-root):
 
 your_dataset/
 ├── data/
@@ -17,17 +17,17 @@ your_dataset/
 └── meta/
     └── episodes.jsonl
 
-输出目录结构：
+Output directory structure:
 
 your_dataset/
 ├── latents/
 │   └── chunk-000/
-│       ├── episode_000000.parquet   # 一行一个 action segment
+│       ├── episode_000000.parquet   # one action segment per row
 │       ├── episode_000001.parquet
 │       └── ...
 └── ...
 
-每行包含：
+Each row contains:
     - episode_index, start_frame, end_frame, frame_ids, text
     - latent_bytes, latent_dtype, latent_num_frames, latent_height, latent_width, latent_channels
     - text_emb_bytes, text_emb_dtype, text_emb_n, text_emb_d
@@ -64,7 +64,7 @@ from traceanything import TraceAnything
 # from wan.text_encoder import WanTextEncoder
 from transformers import AutoTokenizer
 
-# =================== Wan2.2 相关：你需要填的 TODO ===================
+# =================== Wan2.2 TODOs to fill in ===================
 
 # image_keys = {
 #     'observation.images.cam_high':[],
@@ -83,10 +83,10 @@ def build_wan2_2_components(models_root: Path,text_length, device: torch.device)
    
     return vae, text_model
 
-    示意伪代码（不要直接运行）:
+    Example pseudocode (do not run directly):
     ----------------------------------------------------------------
     """
-    # raise NotImplementedError("请在 build_wan2_2_components 里加载 Wan2.2 模型")
+    # raise NotImplementedError("Load the Wan2.2 model in build_wan2_2_components")
     # vae_ckpt = models_root / "Wan2.2-TI2V-5B" / "Wan2.2_VAE.pth"
     vae_ckpt = models_root / "Wan2.2_VAE.pth"
     text_ckpt = models_root / "models_t5_umt5-xxl-enc-bf16.pth"
@@ -114,7 +114,7 @@ def encode_video_with_vae(
     vae, video_tensor: torch.Tensor, device: torch.device
 ) -> torch.Tensor:
     """
-    用 Wan2.2 的 VAE 编码视频。
+    Encode video with the Wan2.2 VAE.
 
     inputs:
         video_tensor: [T, 3, H, W], float32, [0,1]
@@ -123,7 +123,7 @@ def encode_video_with_vae(
 
     TODO: VAE Model extract the latents
 
-    示意伪代码:
+    Example pseudocode:
 
     ----------------------------------------------------------------
     video_tensor = video_tensor.to(device=device, dtype=torch.bfloat16)
@@ -141,12 +141,12 @@ def encode_text(
     text_encoder, text: str, device: torch.device
 ) -> torch.Tensor:
     """
-    用 Wan2.2 文本编码器编码 action_text。
+    Encode action_text with the Wan2.2 text encoder.
 
-    返回:
-        text_emb: [L, D] 或 [1, D]
+    Returns:
+        text_emb: [L, D] or [1, D]
 
-    TODO: 换成你自己的文本编码代码。
+    TODO: Replace this with your own text encoding code.
 
     ----------------------------------------------------------------
     tokens = tokenizer(
@@ -165,10 +165,10 @@ def encode_text(
     text_emb = text_encoder(text,device)
     return text_emb
 
-# ============================ 工具函数 ============================
+# ============================ Utility functions ============================
 
 def tensor_to_bytes(t: torch.Tensor) -> Tuple[bytes, str]:
-    """convert tensor to bytes (bytes, dtype_str)。"""
+    """Convert tensor to bytes as (bytes, dtype_str)."""
     t_cpu = t.detach().cpu()
     if t_cpu.dtype == torch.bfloat16:
         # convert to 32
@@ -180,7 +180,7 @@ def tensor_to_bytes(t: torch.Tensor) -> Tuple[bytes, str]:
 
 
 def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
-    """读取 meta/episodes.jsonl -> {episode_index: meta_dict}"""
+    """Read meta/episodes.jsonl -> {episode_index: meta_dict}."""
     mapping: Dict[int, Dict[str, Any]] = {}
     with meta_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -194,7 +194,7 @@ def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
 
 
 def get_chunk_name(episode_index: int, episodes_per_chunk: int) -> str:
-    """根据 episode_index 推 chunk 名（例如 500 个一块）"""
+    """Infer the chunk name from episode_index, for example with 500 episodes per chunk."""
     chunk_id = episode_index // episodes_per_chunk
     return f"chunk-{chunk_id:03d}"
 
@@ -285,7 +285,7 @@ V = [
 
 def get_video_info(video_path):
     """
-    使用 ffprobe 获取视频信息
+    Get video information with ffprobe.
     """
     cmd = [
         "ffprobe",
@@ -305,37 +305,37 @@ def get_video_info(video_path):
 
 def read_video_frames_ffmpeg_single(video_path, frame_ids, video_size=None):
     """
-    使用 ffmpeg 子进程读取指定帧
+    Read selected frames with ffmpeg subprocesses.
     
     Args:
-        video_path: 视频文件路径
-        frame_ids: 要读取的帧索引列表
-        video_size: 视频尺寸 (width, height)，如果不提供则自动检测
-    
+        video_path: video file path
+        frame_ids: list of frame indices to read
+        video_size: video size (width, height); auto-detected when omitted
+
     Returns:
-        list of numpy arrays (RGB格式)
+        list of numpy arrays in RGB format
     """
-    # 1. 获取视频信息（如果未提供）
+    # 1. Get video information if it was not provided.
     if video_size is None:
         video_size = get_video_info(video_path)
     
     width, height = video_size
-    frame_size = width * height * 3  # RGB24 每个像素3字节
+    frame_size = width * height * 3  # RGB24 uses 3 bytes per pixel.
     
     frames = []
     
     for fid in frame_ids:
-        # 为每个帧创建独立的 ffmpeg 进程
-        # 使用 select 过滤器提取指定帧
+        # Create a separate ffmpeg process for each frame.
+        # Use the select filter to extract the specified frame.
         cmd = [
             "ffmpeg",
-            "-hwaccel", "none",      # 禁用硬件加速
+            "-hwaccel", "none",      # Disable hardware acceleration.
             "-i", str(video_path),
-            "-vf", f"select=eq(n\\,{fid})",  # 选择指定帧
-            "-vsync", "vfr",          # 保持原始帧率
+            "-vf", f"select=eq(n\\,{fid})",  # Select the specified frame.
+            "-vsync", "vfr",          # Preserve the original frame rate.
             "-f", "rawvideo",
             "-pix_fmt", "rgb24",
-            "pipe:1"                  # 输出到 stdout
+            "pipe:1"                  # Output to stdout.
         ]
         
         proc = subprocess.Popen(
@@ -344,12 +344,12 @@ def read_video_frames_ffmpeg_single(video_path, frame_ids, video_size=None):
             stderr=subprocess.PIPE
         )
         
-        # 读取原始帧数据
+        # Read raw frame data.
         raw_data = proc.stdout.read(frame_size)
         proc.wait()
         
         if proc.returncode != 0 or len(raw_data) != frame_size:
-            # 如果读取失败，尝试不跳过帧的方式
+            # If reading fails, try the path that does not skip frames.
             raise RuntimeError(
                 f"Failed to read frame {fid} from {video_path}. "
                 f"FFmpeg error: {proc.stderr.read().decode()}"
@@ -362,11 +362,11 @@ def read_video_frames_ffmpeg_single(video_path, frame_ids, video_size=None):
     return frames
 
 def read_video_frames_pyav(video_path, frame_ids):
-    """使用 PyAV 读取视频帧，对 AV1 有更好支持"""
+    """Read video frames with PyAV, which has better AV1 support."""
     container = av.open(str(video_path))
     video_stream = container.streams.video[0]
     
-    # 获取视频总帧数
+    # Get the total number of video frames.
     total_frames = video_stream.frames
     
     frames = []
@@ -374,13 +374,13 @@ def read_video_frames_pyav(video_path, frame_ids):
         if fid >= total_frames:
             raise RuntimeError(f"Frame {fid} out of range")
         
-        # 跳转到目标帧（PyAV 内部会处理关键帧优化）
+        # Seek to the target frame; PyAV handles keyframe optimization internally.
         container.seek(fid, stream=video_stream)
         
-        # 读取当前帧
+        # Read the current frame.
         for packet in container.demux(video_stream):
             for frame in packet.decode():
-                # 转换为 numpy 数组 (RGB 格式)
+                # Convert to a numpy array in RGB format.
                 img = frame.to_ndarray(format='rgb24')
                 frames.append(img)
                 break
@@ -570,21 +570,21 @@ def _build_model_from_cfg(cfg, ckpt_path: str, device: torch.device) -> torch.nn
 
 def read_video_frames_ffmpeg_batch(video_path, frame_ids):
     """
-    批量读取多个帧，只启动一次 ffmpeg 进程
+    Read multiple frames in a batch using a single ffmpeg process.
     """
     if not frame_ids:
         return []
     
-    # 获取视频信息
+    # Get video information.
     width, height = get_video_info(video_path)
     frame_size = width * height * 3
     
-    # 排序 frame_ids 以便顺序读取
+    # Sort frame_ids so frames can be read sequentially.
     sorted_ids = sorted(frame_ids)
     min_frame = sorted_ids[0]
     max_frame = sorted_ids[-1]
     
-    # 启动 ffmpeg 进程输出指定范围的帧
+    # Start ffmpeg to output frames in the specified range.
     cmd = [
         "ffmpeg",
         "-hwaccel", "none",
@@ -603,7 +603,7 @@ def read_video_frames_ffmpeg_batch(video_path, frame_ids):
         bufsize=frame_size * 10
     )
     
-    # 读取所有帧
+    # Read all frames.
     all_frames = []
     expected_frames = max_frame - min_frame + 1
     
@@ -620,20 +620,20 @@ def read_video_frames_ffmpeg_batch(video_path, frame_ids):
         stderr = proc.stderr.read().decode()
         raise RuntimeError(f"FFmpeg error: {stderr}")
     
-    # 映射到原始的 frame_ids
+    # Map frames back to the original frame_ids.
     frame_map = {min_frame + i: frame for i, frame in enumerate(all_frames)}
     return [frame_map[fid] for fid in frame_ids if fid in frame_map]
 
 
 def read_video_frames_ffmpeg(video_path, frame_ids):
     """
-    智能选择读取方式
+    Choose the frame-reading method automatically.
     """
     if len(frame_ids) > 10:
-        # 批量读取，性能更好
+        # Batch reading is faster for many frames.
         return read_video_frames_ffmpeg_batch(video_path, frame_ids)
     else:
-        # 少量帧，使用原来的逐帧读取
+        # For a small number of frames, use the original per-frame reader.
         return read_video_frames_ffmpeg_single(video_path, frame_ids)
 
 # def read_video_frames(video_path, frame_ids):

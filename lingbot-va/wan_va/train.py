@@ -113,6 +113,25 @@ class Trainer:
             data_type = torch.float32,
             align_layer = self.align_layer
         )
+        if hasattr(config, 'resume_from') and config.resume_from:
+            model_file = os.path.join(transformer_path, "diffusion_pytorch_model.safetensors")
+            if os.path.exists(model_file):
+                resume_state_dict = load_file(model_file, device="cpu")
+                missing_keys, unexpected_keys = self.transformer.load_state_dict(
+                    resume_state_dict,
+                    strict=False,
+                )
+                trace_keys = [key for key in resume_state_dict if key.startswith(("trace_proj.", "align_repr_proj."))]
+                if config.rank == 0:
+                    logger.info(
+                        f"Loaded {len(trace_keys)} trace parameter tensors from resume checkpoint"
+                    )
+                    if missing_keys:
+                        logger.warning(f"Missing keys while loading resume checkpoint: {missing_keys}")
+                    if unexpected_keys:
+                        logger.warning(f"Unexpected keys while loading resume checkpoint: {unexpected_keys}")
+            elif config.rank == 0:
+                logger.warning(f"Resume checkpoint model file not found: {model_file}")
         logger.info("Setting up activation checkpointing ...")
         apply_ac(self.transformer)
 
@@ -700,7 +719,7 @@ def run(args):
         print('world_size, local_rank, rank',world_size, local_rank, rank)
         init_distributed(world_size, local_rank, rank)
     else:
-        # 单进程：确保当前卡设置好
+        # Single process: ensure the current GPU is configured.
         if torch.cuda.is_available():
             torch.cuda.set_device(local_rank)
     # init_distributed(world_size, local_rank, rank)

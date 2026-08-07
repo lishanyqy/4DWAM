@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
 
-# ====== 可配置参数 ======
-# 想切成多少段，就改这里
+# ====== Configurable parameters ======
+# Set how many segments to split into here.
 NUM_SEGMENTS = 0
 
 HOME_PATH = Path('/cpfs01/projects-HDD/cfff-377aad6b032c_HDD/chenshuai/wenxuan')
-# 输入输出文件路径
+# Input and output file paths.
 IN_PATH = Path(HOME_PATH, ".cache/huggingface/lerobot/robotwin/robotwin_multi_10_tasks/meta/episodes_bak.jsonl")
 # OUT_PATH = Path(HOME_PATH, ".cache/huggingface/lerobot/robotwin/robotwin_multi_10_tasks/meta/episodes.jsonl")
 OUT_PATH = Path(HOME_PATH, ".cache/huggingface/lerobot/robotwin/robotwin_multi_10_tasks/meta/episodes.jsonl")

@@ -45,7 +45,7 @@ class WebsocketClientPolicy:
         while True:
             try:
                 headers = {"Authorization": f"Api-Key {self._api_key}"} if self._api_key else None
-                # 禁用 ping 机制，防止推理时间过长导致超时
+                # Disable ping to avoid timeouts during long inference runs.
                 conn = websockets.sync.client.connect(
                     self._uri, 
                     compression=None, 

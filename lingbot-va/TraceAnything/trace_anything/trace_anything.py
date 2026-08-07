@@ -94,7 +94,7 @@ def evaluate_bspline_conf(ctrl_pts3d, ctrl_conf, t_values):
     conf_t  = torch.sum(basis * ctrl_conf.unsqueeze(0),  dim=1).squeeze(1)           # [T,H,W]
     return pts3d_t, conf_t
 
-# ======== Encoders（仅 CroCo） ========
+# ======== Encoders (CroCo only) ========
 class CroCoEncoder(nn.Module):
     def __init__(
         self,

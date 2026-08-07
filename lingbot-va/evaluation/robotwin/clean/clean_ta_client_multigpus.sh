@@ -29,13 +29,13 @@ task_groups=(
 
 debug_task_list="turn_switch hanging_mug move_stapler_pad put_bottles_dustbin open_microwave"
 
-# 逻辑判断：决定使用哪一组任务列表
+# Choose which task list to use.
 if [[ -n "$debug_task_list" ]]; then
-    # 模式 1: 使用自定义调试列表
+    # Mode 1: use the custom debug list.
     echo -e "\033[33m[Debug Mode] Using custom task list...\033[0m"
     read -r -a task_names <<< "$debug_task_list"
 else
-    # 模式 2: 使用原有分组逻辑
+    # Mode 2: use the original grouping logic.
     if (( task_list_id < 0 || task_list_id >= ${#task_groups[@]} )); then
       echo "task_list_id out of range: $task_list_id (0..$(( ${#task_groups[@]} - 1 )))" >&2
       exit 1

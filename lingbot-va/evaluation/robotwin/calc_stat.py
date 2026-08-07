@@ -25,7 +25,7 @@ def compute_success_rates(root_dir: str, true_suffix="True.mp4", false_suffix="F
     return results
 
 
-# 你的三类：task -> 1/2/3
+# Task category mapping: task -> 1/2/3
 TASK_CLASS = {
     "adjust_bottle": 1,
     "beat_block_hammer": 1,
@@ -85,7 +85,7 @@ def mean_rate_of(results_subset):
 
 
 def print_table(results):
-    # 按成功率排序：None(=N/A) 放最后，其余从高到低
+    # Sort by success rate: put None (=N/A) last, then sort the rest from high to low.
     results = sorted(results, key=lambda r: (r[4] is None, -(r[4] or 0.0)))
 
     print(f"{'folder':30s} {'True':>6s} {'False':>6s} {'Total':>6s} {'SuccessRate':>12s} {'Class':>6s}")

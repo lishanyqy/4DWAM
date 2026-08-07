@@ -10,3 +10,5 @@ wandb/*
 .idea/*
 .codex
 .vscode/*
+
+!assets/*

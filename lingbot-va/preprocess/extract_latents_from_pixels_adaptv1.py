@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-从 LeRobot 格式的视频文件（videos/chunk-XXX/camera/episode_XXXXXX.mp4）中读取图像，
-用 Wan2.2 VAE (diffusers AutoencoderKLWan) + UMT5 文本编码器抽取 latent，
-并以 .pth 形式存到 latents/chunk-XXX/camera/episode_XXXXXX_start_end.pth 中。
+Read images from LeRobot-format video files
+(videos/chunk-XXX/camera/episode_XXXXXX.mp4), extract latents with the
+Wan2.2 VAE (diffusers AutoencoderKLWan) and UMT5 text encoder, and save them as
+.pth files under latents/chunk-XXX/camera/episode_XXXXXX_start_end.pth.
 
-同时支持自动为缺少 action_config 的 episodes.jsonl 添加该字段。
+Also supports automatically adding action_config to episodes.jsonl when it is missing.
 
-输入目录结构示例（--dataset-root）:
+Example input directory structure (--dataset-root):
 
 your_dataset/
 ├── videos/
@@ -23,7 +24,7 @@ your_dataset/
 └── meta/
     └── episodes.jsonl
 
-输出目录结构：
+Output directory structure:
 
 your_dataset/
 ├── latents/
@@ -33,18 +34,18 @@ your_dataset/
 │           └── ...
 └── ...
 
-每个 .pth 文件包含字典，字段与 README 中 latent_bak 格式一致：
+Each .pth file contains a dictionary whose fields match the latent_bak format in the README:
     - latent, latent_num_frames, latent_height, latent_width
     - video_num_frames, video_height, video_width
     - text_emb, text
     - frame_ids, start_frame, end_frame
     - fps, ori_fps
 
-自动添加 action_config 规则（当 episodes.jsonl 缺少该字段时）：
+Rules for automatically adding action_config when episodes.jsonl is missing it:
     - start_frame: 0
     - end_frame: episode length
-    - action_text: tasks[0]（或指定字段的第一个元素）
-    - skill: ""（空字符串）
+    - action_text: tasks[0] (or the first element of the specified field)
+    - skill: "" (empty string)
 """
 
 import argparse
@@ -65,9 +66,9 @@ from torchvision.transforms.functional import resize
 from diffusers import AutoencoderKLWan
 from transformers import UMT5EncoderModel, T5TokenizerFast
 
-# =================== 模型路径配置 ===================
+# =================== Model path configuration ===================
 
-# 各相机对应的输出视频尺寸 (H, W)
+# Output video size for each camera (H, W).
 IMAGE_KEYS = {
     'observation.images.cam_high': (256, 320),
     'observation.images.cam_left_wrist': (128, 160),
@@ -77,7 +78,7 @@ IMAGE_KEYS = {
 
 def build_wan2_2_components(models_root: Path, device: torch.device):
     """
-    加载 diffusers AutoencoderKLWan + transformers UMT5EncoderModel + T5TokenizerFast
+    Load diffusers AutoencoderKLWan, transformers UMT5EncoderModel, and T5TokenizerFast.
     """
     vae_path = models_root / "vae"
     text_encoder_path = models_root / "text_encoder"
@@ -110,7 +111,7 @@ def encode_video_with_vae(
     vae, video_tensor: torch.Tensor, device: torch.device
 ) -> torch.Tensor:
     """
-    用 diffusers AutoencoderKLWan 编码视频。
+    Encode video with diffusers AutoencoderKLWan.
 
     inputs:
         video_tensor: [T, 3, H, W], float32, [0,1]
@@ -118,13 +119,13 @@ def encode_video_with_vae(
         latents: [C, T_lat, H_lat, W_lat]
     """
     video_tensor = video_tensor.to(device=device, dtype=torch.bfloat16)
-    # diffusers VAE 期望输入 [B, C, T, H, W]
+    # The diffusers VAE expects input with shape [B, C, T, H, W].
     video_batch = video_tensor.unsqueeze(0).permute(0, 2, 1, 3, 4)  # [1, 3, T, H, W]
 
     latent_dist = vae.encode(video_batch).latent_dist
     latents = latent_dist.sample()
 
-    # 返回 [C, T_lat, H_lat, W_lat]
+    # Return [C, T_lat, H_lat, W_lat].
     return latents.squeeze(0)
 
 
@@ -133,11 +134,11 @@ def encode_text(
     text_encoder, tokenizer, text: str, device: torch.device, pad_length: int = 0
 ) -> torch.Tensor:
     """
-    用 UMT5EncoderModel 编码 action_text。
+    Encode action_text with UMT5EncoderModel.
 
-    返回:
-        text_emb: [L, D] (bfloat16), 已去除 padding。
-        如果 pad_length > 0，则 pad 到固定长度 [pad_length, D]。
+    Returns:
+        text_emb: [L, D] (bfloat16), with padding removed.
+        If pad_length > 0, pad to the fixed length [pad_length, D].
     """
     tokens = tokenizer(
         text,
@@ -151,14 +152,14 @@ def encode_text(
     output = text_encoder(**tokens)
     last_hidden = output.last_hidden_state  # [1, L, D]
 
-    # 去除 padding，只保留实际 token
+    # Remove padding and keep only real tokens.
     attention_mask = tokens["attention_mask"][0]
     seq_len = attention_mask.sum().item()
     text_emb = last_hidden[0, :seq_len]  # [L, D]
 
     text_emb = text_emb.to(torch.bfloat16)
 
-    # 可选：pad 到固定长度
+    # Optional: pad to a fixed length.
     if pad_length > 0 and text_emb.shape[0] < pad_length:
         pad = torch.zeros(pad_length - text_emb.shape[0], text_emb.shape[1],
                           dtype=text_emb.dtype, device=text_emb.device)
@@ -167,11 +168,11 @@ def encode_text(
     return text_emb
 
 
-# ============================ 工具函数 ============================
+# ============================ Utility functions ============================
 
 
 def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
-    """读取 meta/episodes.jsonl -> {episode_index: meta_dict}"""
+    """Read meta/episodes.jsonl -> {episode_index: meta_dict}."""
     mapping: Dict[int, Dict[str, Any]] = {}
     with meta_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -185,7 +186,7 @@ def load_episodes_meta(meta_path: Path) -> Dict[int, Dict[str, Any]]:
 
 
 def get_chunk_name(episode_index: int, episodes_per_chunk: int) -> str:
-    """根据 episode_index 推 chunk 名"""
+    """Infer the chunk name from episode_index."""
     chunk_id = episode_index // episodes_per_chunk
     return f"chunk-{chunk_id:03d}"
 
@@ -194,9 +195,9 @@ def sample_frames(
     total_len: int, start_frame: int, end_frame: int, ori_fps: int, target_fps: int, max_frames: int = 0
 ) -> List[int]:
     """
-    在 [start_frame, end_frame) 范围内按目标 fps 采样帧索引。
-    使用 step = ori_fps // target_fps 的均匀间隔采样。
-    如果 max_frames > 0，则最多采样 max_frames 个帧。
+    Sample frame indices in [start_frame, end_frame) at the target fps.
+    Use uniform interval sampling with step = ori_fps // target_fps.
+    If max_frames > 0, sample at most max_frames frames.
     """
     start_frame = max(0, start_frame)
     end_frame = min(total_len, end_frame)
@@ -219,7 +220,7 @@ def read_episode_video_frames(
     video_path: Path,
 ) -> Tuple[torch.Tensor, int, int, int]:
     """
-    从 mp4 视频读取所有帧。
+    Read all frames from an mp4 video.
 
     Returns:
         video: [T, 3, H, W], float32, [0,1]
@@ -257,26 +258,26 @@ def add_action_config_to_episodes(
     dry_run: bool = False,
 ) -> int:
     """
-    为 episodes.jsonl 中缺少 action_config 的 episode 添加 action_config 字段。
+    Add action_config to episodes in episodes.jsonl that are missing the field.
 
-    规则：
-    - 如果 episode 已有 action_config，跳过
-    - 否则添加 action_config = [{
+    Rules:
+    - Skip episodes that already have action_config.
+    - Otherwise add action_config = [{
         "start_frame": 0,
         "end_frame": length,
-        "action_text": tasks[action_text_index] (或 action_text_source 指定字段),
+        "action_text": tasks[action_text_index] (or the field specified by action_text_source),
         "skill": skill,
     }]
 
     Args:
-        dataset_root: 数据集根目录（包含 meta/episodes.jsonl）
-        action_text_source: 从哪个字段取 action_text，默认 "tasks"
-        action_text_index: 取 tasks 列表的第几个元素，默认 0
-        skill: skill 字段值，默认空字符串
-        dry_run: 如果为 True，只打印不写入
+        dataset_root: dataset root directory containing meta/episodes.jsonl
+        action_text_source: field to read action_text from; defaults to "tasks"
+        action_text_index: index in the tasks list to read; defaults to 0
+        skill: value for the skill field; defaults to an empty string
+        dry_run: if True, only print the planned changes without writing
 
     Returns:
-        修改的 episode 数量
+        Number of modified episodes.
     """
     meta_path = dataset_root / "meta" / "episodes.jsonl"
     if not meta_path.exists():
@@ -295,14 +296,14 @@ def add_action_config_to_episodes(
             obj = json.loads(line)
 
             if "action_config" in obj:
-                # 已有 action_config，保留原样
+                # Keep existing action_config unchanged.
                 lines_out.append(json.dumps(obj, ensure_ascii=False))
                 continue
 
             length = int(obj.get("length", 0))
             tasks = obj.get("tasks", [])
 
-            # 获取 action_text
+            # Get action_text.
             if action_text_source == "tasks" and tasks:
                 action_text = tasks[action_text_index] if action_text_index < len(tasks) else tasks[0]
             else:
@@ -319,7 +320,7 @@ def add_action_config_to_episodes(
             modified_count += 1
 
     if modified_count > 0 and not dry_run:
-        # 备份原文件
+        # Back up the original file.
         backup_path = meta_path.with_suffix(".jsonl.bak")
         if not backup_path.exists():
             meta_path.rename(backup_path)
@@ -351,25 +352,25 @@ def process_dataset(
 ):
     device = torch.device(device_str)
 
-    # 自动添加 action_config（如果缺失）
+    # Automatically add action_config if it is missing.
     if auto_add_action_config:
         add_action_config_to_episodes(dataset_root)
 
-    # 加载模型
+    # Load models.
     vae, text_encoder, tokenizer = build_wan2_2_components(models_root, device)
 
-    # 读取 episodes meta
+    # Read episode metadata.
     meta_path = dataset_root / "meta" / "episodes.jsonl"
     if not meta_path.exists():
         raise FileNotFoundError(f"episodes.jsonl not found at {meta_path}")
     episodes_meta = load_episodes_meta(meta_path)
 
-    # 视频根目录和输出目录
+    # Video root and output directory.
     videos_root = dataset_root / "videos"
     latents_root = dataset_root / "latents"
     latents_root.mkdir(parents=True, exist_ok=True)
 
-    # 获取当前相机的目标尺寸
+    # Get the target size for the current camera.
     target_size = IMAGE_KEYS.get(image_column)
     if target_size is None:
         raise KeyError(f"Unknown image_column: {image_column}")
@@ -381,7 +382,7 @@ def process_dataset(
         action_configs = meta.get("action_config", [])
 
         if not action_configs:
-            # 没有 action_config 时默认整段
+            # If action_config is missing, default to the whole episode.
             action_configs = [{
                 "start_frame": 0,
                 "end_frame": length,
@@ -391,7 +392,7 @@ def process_dataset(
         default_text = tasks[0] if tasks else ""
         chunk_name = get_chunk_name(episode_index, episodes_per_chunk)
 
-        # 视频输入路径
+        # Video input path.
         video_path = (
             videos_root / chunk_name / image_column / f"episode_{episode_index:06d}.mp4"
         )
@@ -405,10 +406,10 @@ def process_dataset(
             print(f"[WARN] failed to read {video_path}: {e}")
             continue
 
-        # Resize 到目标尺寸
+        # Resize to the target size.
         video_resized = resize(video, (target_h, target_w))  # [T, 3, H, W]
 
-        # 输出目录
+        # Output directory.
         out_dir = latents_root / chunk_name / image_column
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -432,21 +433,21 @@ def process_dataset(
                 )
                 continue
 
-            # 采样帧
+            # Sample frames.
             frames = video_resized[frame_ids]  # [N, 3, H, W]
             N, _, H_res, W_res = frames.shape
 
-            # VAE 编码
+            # VAE encoding.
             latents = encode_video_with_vae(vae, frames, device=device)
             # latents: [C, T_lat, H_lat, W_lat]
 
             C_lat, T_lat, H_lat, W_lat = latents.shape
 
-            # 转成 bfloat16 并 flatten 成 [T_lat * H_lat * W_lat, C_lat]
+            # Convert to bfloat16 and flatten into [T_lat * H_lat * W_lat, C_lat].
             latents_bf16 = latents.to(dtype=torch.bfloat16)
             latent_flat = latents_bf16.permute(1, 2, 3, 0).reshape(-1, C_lat)
 
-            # 文本编码
+            # Text encoding.
             text_emb = encode_text(
                 text_encoder, tokenizer, action_text, device=device, pad_length=text_length
             )
@@ -456,7 +457,7 @@ def process_dataset(
             if text_emb_d != 4096:
                 print(f"[WARN] text_emb_d is {text_emb_d}, expected 4096")
 
-            # 构建输出字典
+            # Build the output dictionary.
             row = {
                 "latent": latent_flat.detach().cpu(),
                 "latent_num_frames": int(T_lat),
@@ -486,7 +487,7 @@ def process_dataset(
 
 def main():
     '''
-    示例：
+    Example:
     
     python preprocess/extract_latents_from_pixels0710.py \
         --dataset-root dataset_root \
@@ -494,8 +495,8 @@ def main():
         --max-frames 30 \
         --cameras view1,view2,view3
     '''
-    # python preprocess/extract_latents_from_pixels0710.py --dataset-root /data/user/prtroas0003/lishan/dataspace/robotwin_samples/lift_pot-demo_clean_collect_200-50
-    # --models-root /data/user/prtroas0003/lishan/modelspace/lingbot-va-base
+    # python preprocess/extract_latents_from_pixels0710.py --dataset-root os.environ['HOME']/dataspace/robotwin_samples/lift_pot-demo_clean_collect_200-50
+    # --models-root os.environ['HOME']/modelspace/lingbot-va-base
     # --max-frames 30
     home_path = '~/lishan'
     parser = argparse.ArgumentParser(
