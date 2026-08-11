@@ -38,3 +38,16 @@ Start from the README of the base model you want to reproduce:
     - [OFFICIAL DOC - FastWAM](FastWAM/FastWAM-OFFICIAL.md)
 
 ⚠️ Note: If you are unfamiliar with the WAM codebase, please consult the official documentation for detailed guidance.
+
+## Citation
+```latex
+@misc{yang20264dwaminfusingspatiotemporalawareness,
+      title={4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields}, 
+      author={Lishan Yang and Wenxuan Song and Xi Wang and Pingyue Sheng and Zheng Fang and Ziyang Zhou and Junjie He and Haodong Yan and Jiayi Chen and Nan Sun and Qiao Sun and Lingqiao Liu and Yan Wang and Yuxiang Gao and Feras Dayoub and Haoang Li},
+      year={2026},
+      eprint={2608.08023},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2608.08023}, 
+}
+```
