@@ -20,7 +20,7 @@ This directory contains the supplementary material for the 4D-WAM paper. It is o
 
 The method is designed as a lightweight post-training extension for existing WAM backbones. In this repository, 4D-WAM is implemented on top of FastWAM and Lingbot-VA, with preprocessing, training, and evaluation utilities for adding trajectory-field supervision while preserving the original model workflows.
 
-## Supported base WAMs
+
 
 - [FastWAM](FastWAM/README.md): 4D-WAM implementation built on the FastWAM codebase, including configuration files, training scripts, preprocessing utilities, and evaluation entrypoints for LIBERO and RoboTwin.
 - [Lingbot-VA](lingbot-va/README.md): 4D-WAM implementation built on the Lingbot-VA codebase, including data preprocessing, post-training, TraceAnything integration, and simulation evaluation utilities.
@@ -28,14 +28,19 @@ The method is designed as a lightweight post-training extension for existing WAM
 
 ## Get Started
 
+### Supported base WAMs
 Start from the README of the base model you want to reproduce:
-
-- **Lingbot-VA**
+- **Lingbot-VA**: 4D-WAM implementation built on the Lingbot-VA codebase, including data preprocessing, post-training, TraceAnything integration, and simulation evaluation utilities.
     - [4DWAM - Lingbot-VA base model](lingbot-va/README.md)
     - [OFFICIAL DOC - Lingbot-VA](lingbot-va/Lingbot-VA-OFFICIAL.md)
-- FastWAM
+- **FastWAM**: 4D-WAM implementation built on the FastWAM codebase, including configuration files, training scripts, preprocessing utilities, and evaluation entrypoints for LIBERO and RoboTwin.
     - [FastWAM base model](FastWAM/README.md)
     - [OFFICIAL DOC - FastWAM](FastWAM/FastWAM-OFFICIAL.md)
+
+### Checkpoint Download
+| Model | Hugging Face |
+|---|---|
+| 4D-WAM-LIBERO (FastWAM-Joint) | 🤗 [lishanyang/4dwam_fastwam_joint](https://huggingface.co/lishanyang/4dwam_fastwam_joint) |
 
 ⚠️ Note: If you are unfamiliar with the WAM codebase, please consult the official documentation for detailed guidance.
 
