@@ -10,6 +10,16 @@ This directory contains the supplementary material for the 4D-WAM paper. It is o
   <a href="https://nv-sana.mit.edu/ctrlnet/"><img src="https://img.shields.io/static/v1?label=Demo:1x3090&message=ControlNet&color=yellow"></a> &ensp;
 </p> -->
 
+<p align="center">
+  <a href="https://arxiv.org/abs/2608.08023">
+    <img src="https://img.shields.io/badge/arXiv-2608.08023-b31b1b.svg" alt="arXiv">
+  </a>
+  &ensp;
+  <a href="https://huggingface.co/lishanyang/4dwam_fastwam_joint">
+    <img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Checkpoint-yellow" alt="Hugging Face">
+  </a>
+</p>
+
 ## What is 4D-WAM?
 
 4D-WAM augments World Action Models (WAMs) with explicit spatiotemporal awareness. Instead of relying only on video latents and action tokens, it introduces trajectory fields that describe how points move through space and time, giving the model a structured signal for object motion, scene dynamics, and action-conditioned change.
