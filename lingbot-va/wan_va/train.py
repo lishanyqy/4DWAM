@@ -398,12 +398,12 @@ class Trainer:
         
         return alignment_loss
     
-    def _build_alignment_show(self,accumulated_align_losses):
+    def _build_alignment_show(self,accumulated_align_losses, accumulation_correction=1):
         alignment_loss_show = {}
         max_alignment_loss_show = {}
         for key in accumulated_align_losses:
-            alignment_loss_show[key] = dist_mean(torch.stack(accumulated_align_losses[key]).sum()).detach().cpu().item() if self.enable_trace else 0
-            max_alignment_loss_show[key] = dist_max(torch.stack(accumulated_align_losses[key]).sum()).detach().cpu().item() if self.enable_trace else 0
+            alignment_loss_show[key] = dist_mean(torch.stack(accumulated_align_losses[key]).sum() * accumulation_correction).detach().cpu().item() if self.enable_trace else 0
+            max_alignment_loss_show[key] = dist_max(torch.stack(accumulated_align_losses[key]).sum() * accumulation_correction).detach().cpu().item() if self.enable_trace else 0
         
         return alignment_loss_show, max_alignment_loss_show
     
@@ -415,6 +415,11 @@ class Trainer:
         progress_bar,
     ):
         num_accumulated_batches = len(accumulated_latent_losses)
+        accumulation_correction = self.gradient_accumulation_steps / num_accumulated_batches
+        if accumulation_correction != 1:
+            for param in self.trainable_params:
+                if param.grad is not None:
+                    param.grad.mul_(accumulation_correction)
         total_norm = torch.nn.utils.clip_grad_norm_(self.transformer.parameters(), 2.0)
         self.optimizer.step()
         self.lr_scheduler.step()
@@ -422,16 +427,19 @@ class Trainer:
 
         lr = self.lr_scheduler.get_last_lr()[0]
 
-        latent_loss_show = dist_mean(torch.stack(accumulated_latent_losses).sum()).detach().cpu().item()
-        action_loss_show = dist_mean(torch.stack(accumulated_action_losses).sum()).detach().cpu().item()
+        latent_loss_show = dist_mean(torch.stack(accumulated_latent_losses).sum() * accumulation_correction).detach().cpu().item()
+        action_loss_show = dist_mean(torch.stack(accumulated_action_losses).sum() * accumulation_correction).detach().cpu().item()
 
-        max_latent_loss_show = dist_max(torch.stack(accumulated_latent_losses).sum()).detach().cpu().item()
-        max_action_loss_show = dist_max(torch.stack(accumulated_action_losses).sum()).detach().cpu().item()
+        max_latent_loss_show = dist_max(torch.stack(accumulated_latent_losses).sum() * accumulation_correction).detach().cpu().item()
+        max_action_loss_show = dist_max(torch.stack(accumulated_action_losses).sum() * accumulation_correction).detach().cpu().item()
 
         # alignment_loss_show = dist_mean(torch.stack(accumulated_align_losses).sum()).detach().cpu().item() if self.enable_trace else 0
         # max_alignment_loss_show = dist_max(torch.stack(accumulated_align_losses).sum()).detach().cpu().item() if self.enable_trace else 0
 
-        alignment_loss_show, max_alignment_loss_show = self._build_alignment_show(accumulated_align_losses)
+        alignment_loss_show, max_alignment_loss_show = self._build_alignment_show(
+            accumulated_align_losses,
+            accumulation_correction,
+        )
 
         torch.cuda.synchronize()
         if self.step % self.config.gc_interval == 0:

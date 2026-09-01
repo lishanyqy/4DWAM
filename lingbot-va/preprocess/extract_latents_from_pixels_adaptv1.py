@@ -241,7 +241,7 @@ def read_episode_video_frames(
         raise ValueError(f"No frames read from {video_path}")
 
     # Stack and convert to tensor [T, H, W, 3]
-    video_np = np.stack(frames, axis=0).astype(np.float32) / 255.0
+    video_np = np.stack(frames, axis=0).astype(np.float32) / 255.0 * 2.0 - 1.0
     video = torch.from_numpy(video_np)  # [T, H, W, 3]
     # Permute to [T, 3, H, W]
     video = video.permute(0, 3, 1, 2).contiguous()
