@@ -15,7 +15,7 @@ This directory contains the supplementary material for the 4D-WAM paper. It is o
     <img src="https://img.shields.io/badge/arXiv-2608.08023-b31b1b.svg" alt="arXiv">
   </a>
   &ensp;
-  <a href="https://huggingface.co/lishanyang/4dwam_fastwam_joint">
+  <a href="https://huggingface.co/collections/lishanyang/4d-wam">
     <img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Checkpoint-yellow" alt="Hugging Face">
   </a>
 </p>
