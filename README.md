@@ -50,7 +50,8 @@ Start from the README of the base model you want to reproduce:
 ### Checkpoint Download
 | Model | Hugging Face |
 |---|---|
-| 4D-WAM-LIBERO (FastWAM-Joint) | 🤗 [lishanyang/4dwam_fastwam_joint](https://huggingface.co/lishanyang/4dwam_fastwam_joint) |
+| 4D-WAM-LIBERO (FastWAM-Joint) | 🤗 [lishanyang/4dwam_fastwam_joint_libero](https://huggingface.co/lishanyang/4dwam_fastwam_joint_libero) |
+| 4D-WAM RoboTwin-Full (FastWAM-Joint) | 🤗 [lishanyang/4dwam_fastwam_joint_robotwin_full](https://huggingface.co/lishanyang/4dwam_fastwam_joint_robotwin_full) |
 
 ⚠️ Note: If you are unfamiliar with the WAM codebase, please consult the official documentation for detailed guidance.
 
