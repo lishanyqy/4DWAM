@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields</title>
+<meta name="description" content="4D-WAM is a model-agnostic training recipe that injects 4D spatiotemporal knowledge from 3D trajectory fields into World Action Models via motion alignment and destination alignment.">
+<meta property="og:title" content="4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields">
+<meta property="og:description" content="A model-agnostic alignment strategy that gives World Action Models 4D awareness — consistent gains in-distribution, large gains out-of-distribution, and on a real bimanual robot.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="static/images/robot_show.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f7fcf'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' font-weight='600' text-anchor='middle' fill='white'%3E4D%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <a class="brand" href="#top">4D-<span>WAM</span></a>
+    <ul>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#prediction">Video Prediction</a></li>
+      <li><a href="#realworld">Real World</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="container">
+    <div class="venue">arXiv 2608.08023 &middot; cs.RO &middot; 2026</div>
+    <h1><span class="name">4D-WAM:</span> Infusing Spatiotemporal Awareness into World&nbsp;Action&nbsp;Models through Trajectory Fields</h1>
+
+    <div class="authors">
+      <a href="#">Lishan Yang</a><sup>1,*</sup>,
+      <a href="#">Wenxuan Song</a><sup>2,†,*</sup>,
+      <a href="#">Xi Wang</a><sup>4</sup>,
+      <a href="#">Pingyue Sheng</a><sup>3</sup>,
+      <a href="#">Zheng Fang</a><sup>3</sup>,
+      <a href="#">Ziyang Zhou</a><sup>2</sup>,
+      <a href="#">Junjie He</a><sup>2</sup>,
+      <a href="#">Haodong Yan</a><sup>2</sup>,
+      <a href="#">Jiayi Chen</a><sup>2</sup>,
+      <a href="#">Nan Sun</a><sup>4</sup>,
+      <a href="#">Qiao Sun</a><sup>5</sup>,
+      <a href="#">Lingqiao Liu</a><sup>1</sup>,
+      <a href="#">Yan Wang</a><sup>4</sup>,
+      <a href="#">Yuxiang Gao</a><sup>3</sup>,
+      <a href="#">Feras Dayoub</a><sup>1,‡</sup>,
+      <a href="#">Haoang Li</a><sup>2,‡</sup>
+    </div>
+    <div class="affils">
+      <sup>1</sup>University of Adelaide &nbsp;&nbsp;
+      <sup>2</sup>HKUST (Guangzhou) &nbsp;&nbsp;
+      <sup>3</sup>COCO Matrix &nbsp;&nbsp;
+      <sup>4</sup>Tsinghua University &nbsp;&nbsp;
+      <sup>5</sup>Fudan University
+    </div>
+    <div class="notes"><sup>*</sup>Equal contribution &nbsp;·&nbsp; <sup>†</sup>Project leader &nbsp;·&nbsp; <sup>‡</sup>Corresponding authors</div>
+
+    <div class="links">
+      <a class="btn" href="https://arxiv.org/abs/2608.08023" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        arXiv
+      </a>
+      <a class="btn" href="static/paper.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Paper (PDF)
+      </a>
+      <a class="btn" href="https://github.com/lishanyqy/4DWAM" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2.1c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/></svg>
+        Code
+      </a>
+      <a class="btn ghost" href="#realworld">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Robot Videos
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="teaser">
+  <div class="container">
+    <div class="figure flush" style="padding:16px 18px 10px">
+      <img src="static/images/overview.svg" alt="Overview of 4D-WAM: (a) training recipe aligning World Action Model features with Trace Anything 4D features through destination and motion alignment; (b) success-rate gains over baselines in-distribution and out-of-distribution; (c) video prediction comparison.">
+    </div>
+    <p class="caption"><b>Figure 1.</b> (a) The 4D-WAM training recipe: intermediate DiT features of a World Action Model are aligned with 4D trajectory-field features from a frozen <i>Trace Anything</i> teacher through <b>motion alignment</b> and <b>destination alignment</b>. (b) 4D-WAM consistently outperforms its base model, with particularly large gains under out-of-distribution shifts. (c) It also yields more faithful future-frame prediction.</p>
+
+    <div class="highlights">
+      <div class="stat"><div class="num">+8.8<small>pts</small></div><div class="lbl">LIBERO-Plus (OOD)</div><div class="ctx">62.2 → 71.0 avg. success, 7 perturbations</div></div>
+      <div class="stat"><div class="num">+7.2<small>pts</small></div><div class="lbl">RoboTwin Clean2Rand</div><div class="ctx">34.6 → 41.8 under domain randomization</div></div>
+      <div class="stat"><div class="num">+11.5<small>pts</small></div><div class="lbl">Real-world progress</div><div class="ctx">4 long-horizon tasks on ARX LIFT2</div></div>
+      <div class="stat"><div class="num">0<small>overhead</small></div><div class="lbl">At inference time</div><div class="ctx">Alignment modules are removed after training</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="abstract" class="abstract">
+  <div class="narrow">
+    <div class="section-head"><span class="eyebrow">Abstract</span><h2>Videos are 2D projections of a dynamic 3D world</h2></div>
+    <p>Building on recent advances in world models, <strong>World Action Models (WAMs)</strong> jointly model video prediction and action generation. However, they typically represent videos in 2D pixel space, creating a representation gap with the 3D space in which robotic actions are executed. Recent 3D approaches introduce 3D information, but fail to fully exploit the dynamics of 3D structures.</p>
+    <p>In this work, we propose <strong>4D-WAM</strong>, a model-agnostic training strategy that injects spatiotemporal knowledge from <strong>3D trajectory fields</strong> into WAMs through representation alignment. To this end, we introduce two complementary objectives: <strong>(1) motion alignment</strong>, which aligns temporal feature variations across adjacent frames and encourages the model to build local 4D awareness during training, and <strong>(2) destination alignment</strong>, which guides the model to infer the final destination from the source frame by minimizing the gap between their attention-like similarity distributions. Together, these objectives provide both local motion supervision and long-horizon goal guidance, enabling WAMs to learn trajectory-level spatiotemporal representations.</p>
+    <p>Extensive in-distribution and out-of-distribution experiments across different base models demonstrate improvements in spatial understanding, execution precision, robustness, generalization, and versatility.</p>
+  </div>
+</section>
+
+<section id="method">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Method</span>
+      <h2>Align what changes, not what is</h2>
+      <p class="lede">Directly matching WAM features to 3D/4D foundation-model features — the recipe that works for VLAs — consistently <em>hurts</em> WAMs. The two representation spaces are simply too different. 4D-WAM instead aligns their <b>temporal differences</b> and their <b>source-to-destination correspondence</b>, which describe the same underlying motion regardless of feature space.</p>
+    </div>
+
+    <div class="figure" style="padding:14px 18px 8px">
+      <img src="static/images/training_process.svg" alt="Alignment process of 4D-WAM: WAM DiT tokens and Trace Anything tokens are projected, latent differences are matched with cosine similarity (motion alignment), and source-to-destination softmax distributions are matched with KL divergence (destination alignment).">
+    </div>
+    <p class="caption"><b>Figure 3. Alignment process.</b> Multi-frame video is encoded by the (trainable) WAM and the (frozen) Trace Anything teacher. Lightweight projectors map both into a shared space; (1) token-wise latent differences between adjacent frames are matched with cosine similarity, and (2) source→destination similarity distributions are matched with KL divergence. Everything added is removed after training.</p>
+
+    <div class="two-col" style="margin-top:36px">
+      <div>
+        <div class="figure">
+          <img src="static/images/representation_similarity.png" alt="Cosine similarity between representation spaces across five RoboTwin 2.0 tasks: pi0.5 vs. VGGT 3D features are consistently positive; Lingbot-VA vs. Trace Anything 4D features are consistently negative; their temporal differences are mixed.">
+        </div>
+        <p class="caption"><b>Figure 2. Why naive alignment fails.</b> Across five RoboTwin 2.0 tasks, (a) a VLA's (π<sub>0.5</sub>) hidden states are consistently <i>positively</i> similar to 3D features from VGGT, whereas (b) a WAM's (Lingbot-VA) hidden states are consistently <i>negatively</i> similar to 4D features from Trace Anything. (c) Their frame-to-frame temporal differences, however, share consistent motion patterns — the signal 4D-WAM aligns.</p>
+      </div>
+      <div class="method-cards" style="grid-template-columns:1fr; margin-top:0">
+        <div class="mcard">
+          <span class="tag">Objective 1</span>
+          <h3>Motion Alignment</h3>
+          <p>For each token, the change between adjacent frames in the WAM's projected DiT features is pulled toward the corresponding change in the teacher's 4D trajectory features. Absolute features may live in different spaces, but their frame-to-frame deltas describe one consistent motion process — object displacement, contact, and the physics of manipulation.</p>
+          <div class="eq">L<sub>motion</sub> = 1 − cos( Δh<sub>f</sub> , Δz<sub>f</sub> ),&nbsp; Δh<sub>f</sub> = h<sub>f+1</sub> − h<sub>f</sub></div>
+        </div>
+        <div class="mcard">
+          <span class="tag">Objective 2</span>
+          <h3>Destination Alignment</h3>
+          <p>The first frame is the <i>source</i>, the last frame the <i>destination</i>. For every source token, a temperature-scaled softmax over its similarities to destination tokens gives an attention-like distribution of "where this ends up". The WAM's distribution is matched to the teacher's with KL divergence, teaching goal-directed correspondence beyond local motion.</p>
+          <div class="eq">L<sub>dest</sub> = KL( q<sub>z</sub>(·|i) ‖ p<sub>h</sub>(·|i) ),&nbsp; p<sub>h</sub>(·|i) = softmax(⟨h<sub>src,i</sub>, z<sub>dest</sub>⟩ / τ)</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption" style="margin-top:18px">Overall objective: <code>L = L<sub>latent</sub> + L<sub>action</sub> + λ<sub>motion</sub> L<sub>motion</sub> + λ<sub>dest</sub> L<sub>dest</sub></code>, with both λ &lt; 0.1. Alignment is applied at DiT layer 20. Pre-extracting the teacher's trajectory features keeps training cost within ~2% of the baseline (7.3 s → 7.5 s per step; 51 → 52 eight-GPU hours), and the projectors add only 56 MiB of parameters that are discarded after training.</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Experiments</span>
+      <h2>Small gains where benchmarks saturate, large gains where they don't</h2>
+      <p class="lede">4D-WAM is evaluated on top of two different base models: <b>FastWAM-Joint</b> (RoboTwin 2.0, LIBERO, LIBERO-Plus) and <b>Lingbot-VA</b> (RoboTwin Clean2Rand, real world). Success rates in %.</p>
+    </div>
+
+    <div class="tables">
+      <div class="tcard span2">
+        <h3>In-distribution: RoboTwin 2.0 &amp; LIBERO</h3>
+        <div class="sub">Table 1 · Base model FastWAM-Joint · 50 RoboTwin tasks (500 randomized + 50 clean demos each); LIBERO four suites, 40 tasks.</div>
+        <div class="twrap">
+        <table class="res">
+          <thead>
+            <tr class="group"><th></th><th colspan="3">RoboTwin 2.0</th><th colspan="5" class="divider">LIBERO</th></tr>
+            <tr><th>Model</th><th>Clean</th><th>Random</th><th>Avg.</th><th class="divider">Object</th><th>Goal</th><th>Spatial</th><th>Long</th><th>Avg.</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>π<sub>0.5</sub></td><td>42.98</td><td>43.84</td><td>43.41</td><td class="divider">98.2</td><td>98.0</td><td>98.8</td><td>92.4</td><td>96.9</td></tr>
+            <tr><td>WorldVLA</td><td>42.50</td><td>32.20</td><td>37.35</td><td class="divider">96.2</td><td>83.4</td><td>87.6</td><td>60.0</td><td>81.8</td></tr>
+            <tr><td>X-VLA</td><td>72.80</td><td>72.84</td><td>72.82</td><td class="divider">98.6</td><td>97.8</td><td>98.2</td><td><b>97.6</b></td><td>98.1</td></tr>
+            <tr><td>Motus</td><td>88.66</td><td>87.02</td><td>87.84</td><td class="divider"><b>99.8</b></td><td>96.6</td><td>96.8</td><td><b>97.6</b></td><td>97.7</td></tr>
+            <tr><td>X-WAM</td><td>89.80</td><td>90.70</td><td>90.25</td><td class="divider muted">–</td><td class="muted">–</td><td class="muted">–</td><td class="muted">–</td><td class="muted">–</td></tr>
+            <tr><td>FastWAM-Joint (base)</td><td>90.84</td><td>90.32</td><td>90.58</td><td class="divider">99.0</td><td>98.4</td><td><b>99.6</b></td><td>95.8</td><td>98.2</td></tr>
+            <tr class="ours"><td>4D-WAM (ours)</td><td><b>91.92</b></td><td><b>90.76</b></td><td><b>91.34</b></td><td class="divider">99.5</td><td><b>98.6</b></td><td>98.8</td><td>97.4</td><td><b>98.6</b></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <h3>OOD: LIBERO-Plus</h3>
+        <div class="sub">Table 2 · Trained on LIBERO only, evaluated under seven unseen perturbations · base FastWAM-Joint.</div>
+        <div class="twrap">
+        <table class="res">
+          <thead><tr><th>Perturbation</th><th>FastWAM-Joint</th><th>4D-WAM</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>Camera</td><td>27.89</td><td><b>45.15</b></td><td><span class="delta">+17.3</span></td></tr>
+            <tr><td>Robot</td><td>60.90</td><td><b>64.26</b></td><td><span class="delta">+3.4</span></td></tr>
+            <tr><td>Language</td><td>89.26</td><td><b>90.63</b></td><td><span class="delta">+1.4</span></td></tr>
+            <tr><td>Light</td><td>86.73</td><td><b>94.29</b></td><td><span class="delta">+7.6</span></td></tr>
+            <tr><td>Background</td><td>49.26</td><td><b>57.71</b></td><td><span class="delta">+8.5</span></td></tr>
+            <tr><td>Noise</td><td>51.09</td><td><b>69.08</b></td><td><span class="delta">+18.0</span></td></tr>
+            <tr><td>Layout</td><td>74.82</td><td><b>79.21</b></td><td><span class="delta">+4.4</span></td></tr>
+            <tr class="ours"><td>Average</td><td>62.21</td><td><b>71.01</b></td><td><span class="delta">+8.8</span></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <h3>OOD: RoboTwin Clean2Rand</h3>
+        <div class="sub">Table 3 · Trained on 50 clean demos per task, evaluated with domain randomization · base Lingbot-VA. <b>Best</b>, <u>second best</u>.</div>
+        <div class="twrap">
+        <table class="res">
+          <thead><tr><th>Model</th><th>Clean</th><th>Rand.</th><th>Avg.</th></tr></thead>
+          <tbody>
+            <tr><td>StarVLA</td><td>58.1</td><td>10.6</td><td>34.3</td></tr>
+            <tr><td>GR00T-N1.7</td><td>43.6</td><td>20.7</td><td>32.2</td></tr>
+            <tr><td>π<sub>0.5</sub></td><td>68.5</td><td><b>46.0</b></td><td>57.3</td></tr>
+            <tr><td>Abot-M0</td><td>70.7</td><td>36.0</td><td>53.4</td></tr>
+            <tr><td>FastWAM</td><td>70.2</td><td>1.2</td><td>35.7</td></tr>
+            <tr><td>Lingbot-VA (base)</td><td><u>80.7</u></td><td>34.6</td><td><u>57.7</u></td></tr>
+            <tr class="ours"><td>4D-WAM (ours)</td><td><b>81.5</b></td><td><u>41.8</u></td><td><b>61.7</b></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <h3>Ablation on LIBERO</h3>
+        <div class="sub">Table 5 · Alignment layer and training objectives · base FastWAM-Joint.</div>
+        <div class="twrap">
+        <table class="res">
+          <thead><tr><th>Setting</th><th>Object</th><th>Goal</th><th>Spatial</th><th>Long</th><th>Avg.</th></tr></thead>
+          <tbody>
+            <tr><td>Layer 16</td><td>99.8</td><td>97.0</td><td>98.2</td><td>96.8</td><td>97.9</td></tr>
+            <tr><td>Layer 18</td><td>99.2</td><td>97.6</td><td>98.0</td><td>94.8</td><td>97.4</td></tr>
+            <tr class="ours"><td>Layer 20 (ours)</td><td>99.6</td><td>98.6</td><td>98.8</td><td>97.4</td><td><b>98.6</b></td></tr>
+            <tr><td>Layer 22</td><td>100.0</td><td>98.6</td><td>98.8</td><td>96.6</td><td>98.5</td></tr>
+            <tr class="sep"><td>Layer 24</td><td>99.0</td><td>98.4</td><td>98.0</td><td>95.8</td><td>97.8</td></tr>
+            <tr><td>w/o Destination</td><td>99.4</td><td>97.6</td><td>98.4</td><td>96.6</td><td>98.0</td></tr>
+            <tr><td>w/o Motion</td><td>99.8</td><td>97.2</td><td>99.0</td><td>96.0</td><td>98.0</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <h3>Training cost</h3>
+        <div class="sub">Table 7 · LIBERO, 25k steps, batch 512, 8× H100 80 GiB. Cached vs. online trajectory extraction.</div>
+        <div class="twrap">
+        <table class="res">
+          <thead><tr><th>Metric</th><th>Baseline</th><th>4D-WAM</th><th>4D-WAM (Online)</th></tr></thead>
+          <tbody>
+            <tr><td>Time per step (s)</td><td>7.3</td><td>7.5</td><td>8.4</td></tr>
+            <tr><td>Peak GPU memory (%)</td><td>77.3</td><td>82.7</td><td>96.0</td></tr>
+            <tr><td>Training time (8 GPUs, h)</td><td>51</td><td>52</td><td>59</td></tr>
+            <tr><td>Extra trainable params (MiB)</td><td>–</td><td>56</td><td>56</td></tr>
+            <tr><td>Extra inference cost</td><td>–</td><td><b>none</b></td><td><b>none</b></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="prediction">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Video Prediction</span>
+      <h2>Better futures, not just better actions</h2>
+      <p class="lede">Executing policies in simulation and comparing predicted future frames with ground truth on LIBERO-Plus, 4D-WAM improves <b>PSNR 19.22 → 21.44</b> and <b>SSIM 0.75 → 0.83</b> over FastWAM-Joint (Table 4, 100 episodes per perturbation type).</p>
+    </div>
+
+    <div class="pred-grid">
+      <div class="video-card">
+        <video autoplay muted loop playsinline preload="metadata" poster="static/images/poster_three_video_comparison.jpg">
+          <source src="static/videos/three_video_comparison.mp4" type="video/mp4">
+        </video>
+        <div class="vc-body">
+          <h3>Predicted future frames: 4D-WAM (top) vs. baseline (bottom)</h3>
+          <p>Three LIBERO rollouts, each showing the main view and the wrist view generated by the world model. 4D-WAM keeps the arm, the manipulated object and the target region coherent across time.</p>
+        </div>
+      </div>
+      <div>
+        <div class="figure flush" style="padding:14px 16px 6px">
+          <img src="static/images/predict_show.png" alt="Side-by-side future prediction frames from FastWAM-Joint (left, errors in red boxes) and 4D-WAM (right, correct regions in green boxes) on three LIBERO-Plus scenes.">
+        </div>
+        <p class="caption"><b>Figure 4.</b> Four consecutive predicted frames on LIBERO-Plus. Red boxes mark poor predictions; green boxes mark high-quality ones. Row 1: FastWAM-Joint loses the arm from the second frame under camera blur. Row 2: 4D-WAM keeps tracking the microwave door despite occlusion. Row 3: while grasping the book, 4D-WAM preserves the book's position from its initial frame to its destination.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="realworld">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Real-World Experiments</span>
+      <h2>Four long-horizon tasks on a bimanual ARX LIFT2</h2>
+      <p class="lede">Two 6-DoF arms with 1-DoF grippers, one primary camera between the arms and two wrist cameras. 550 demonstrations across four tasks; Lingbot-VA as base model; 50 trials per task. <b>Hover</b> (or tap) a marker to see which task each object belongs to.</p>
+    </div>
+
+    <div class="rw-intro">
+      <div class="hotspot-figure">
+        <div class="hotspot-wrap" id="hotspotWrap">
+          <img src="static/images/robot_show.png" alt="Real-world platform: ARX LIFT2 bimanual robot with three cameras; on the table a red base with four yellow cylinders, an open toolbox, a rotating turntable with lights (one red), and a folded blue towel." width="1800" height="909">
+
+          <!-- objects -->
+          <div class="hotspot left" data-task="a" style="left:13%; top:72%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Cylinders"></button>
+            <div class="tip" role="tooltip"><div class="obj">Cylinders</div><div class="task">Task (a) · Cylinder Insertion</div><div class="desc">Four yellow cylinders of different sizes, randomly placed in front of the slots. Each arm is responsible for two.</div></div>
+          </div>
+          <div class="hotspot left" data-task="a" style="left:27%; top:82%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Slots / holes"></button>
+            <div class="tip" role="tooltip"><div class="obj">Slots / Holes</div><div class="task">Task (a) · Cylinder Insertion</div><div class="desc">Size-matched holes on the red base at the table centre. Cylinders must be inserted in ascending size order.</div></div>
+          </div>
+          <div class="hotspot" data-task="c" style="left:33%; top:58%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Toolbox"></button>
+            <div class="tip" role="tooltip"><div class="obj">Toolbox</div><div class="task">Task (c) · Toolbox Wrench Localization</div><div class="desc">Initially closed. The right arm opens it, inspects the items one by one, finds the wrench and places it in the tray.</div></div>
+          </div>
+          <div class="hotspot" data-task="d" style="left:43%; top:68%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Red light"></button>
+            <div class="tip" role="tooltip"><div class="obj">Red Light</div><div class="task">Task (d) · Rotating Light Pick-and-Place</div><div class="desc">The illuminated red light among several lights. The robot must identify it, grasp it while the turntable spins, and set it aside.</div></div>
+          </div>
+          <div class="hotspot" data-task="d" style="left:51%; top:80%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Rotating turntable"></button>
+            <div class="tip" role="tooltip"><div class="obj">Rotating Turntable</div><div class="task">Task (d) · Rotating Light Pick-and-Place</div><div class="desc">Keeps rotating throughout the episode — a direct test of dynamics understanding and spatiotemporal reasoning.</div></div>
+          </div>
+          <div class="hotspot right" data-task="b" style="left:78%; top:66%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Towel"></button>
+            <div class="tip" role="tooltip"><div class="obj">Towel</div><div class="task">Task (b) · Towel Flattening</div><div class="desc">A crumpled towel. Both arms grasp opposite ends, pull it open and lay it flat — a deformable-object task.</div></div>
+          </div>
+
+          <!-- robot / sensors -->
+          <div class="hotspot robot below" data-task="robot" style="left:31.5%; top:14%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Left wrist camera"></button>
+            <div class="tip" role="tooltip"><div class="obj">Left Wrist Camera</div><div class="task">Platform · Sensing</div><div class="desc">RGB camera mounted near the left arm, giving a close-up view during grasping.</div></div>
+          </div>
+          <div class="hotspot robot below" data-task="robot" style="left:49.5%; top:5.5%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Primary camera"></button>
+            <div class="tip" role="tooltip"><div class="obj">Primary Camera</div><div class="task">Platform · Sensing</div><div class="desc">Positioned between the two arms; the main observation used by the world action model.</div></div>
+          </div>
+          <div class="hotspot robot below" data-task="robot" style="left:69%; top:14%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Right wrist camera"></button>
+            <div class="tip" role="tooltip"><div class="obj">Right Wrist Camera</div><div class="task">Platform · Sensing</div><div class="desc">RGB camera mounted near the right arm, which performs the two single-arm tasks (c, d).</div></div>
+          </div>
+          <div class="hotspot robot" data-task="robot" style="left:27.5%; top:25%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Left arm and gripper"></button>
+            <div class="tip" role="tooltip"><div class="obj">Left Arm · 1-DoF Gripper</div><div class="task">Platform · ARX LIFT2</div><div class="desc">6-DoF manipulator with a parallel gripper; used in the bimanual tasks (a, b).</div></div>
+          </div>
+          <div class="hotspot robot" data-task="robot" style="left:66.5%; top:24%">
+            <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+            <button class="dot" type="button" aria-label="Right arm and gripper"></button>
+            <div class="tip" role="tooltip"><div class="obj">Right Arm · 1-DoF Gripper</div><div class="task">Platform · ARX LIFT2</div><div class="desc">6-DoF manipulator with a parallel gripper; used in all four tasks.</div></div>
+          </div>
+        </div>
+        <div class="hint"><span class="t"><span class="k"></span> task objects</span><span class="t"><span class="k r"></span> robot &amp; sensors</span><span class="t">· hover or tap a marker</span></div>
+      </div>
+
+      <div class="rw-setup">
+        <h3 style="margin-bottom:10px">Tasks</h3>
+        <p>Hover a task to highlight its objects on the platform.</p>
+        <ul class="legend" id="legend">
+          <li><button type="button" data-task="a"><span class="sw a">a</span><span class="txt"><b>Cylinder Insertion</b><span>Bimanual · fine-grained accuracy &amp; long horizon · 100 demos</span></span></button></li>
+          <li><button type="button" data-task="b"><span class="sw b">b</span><span class="txt"><b>Towel Flattening</b><span>Bimanual · deformable objects · 150 demos</span></span></button></li>
+          <li><button type="button" data-task="c"><span class="sw c">c</span><span class="txt"><b>Toolbox Wrench Localization</b><span>Single arm · spatial reasoning &amp; long horizon · 200 demos</span></span></button></li>
+          <li><button type="button" data-task="d"><span class="sw d">d</span><span class="txt"><b>Rotating Light Pick-and-Place</b><span>Single arm · dynamics understanding · 100 demos</span></span></button></li>
+        </ul>
+
+      </div>
+    </div>
+
+    <div class="tasks">
+      <article class="task" data-task="a">
+        <div class="vids">
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_size_1.jpg" data-src="static/videos/4dwam_size_1.mp4"></video>
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_size_2.jpg" data-src="static/videos/4dwam_size_2.mp4"></video>
+        </div>
+        <div class="body">
+          <span class="lab"><i style="background:#d8493a">a</i> Bimanual · 4D-WAM rollouts</span>
+          <h3>Cylinder Insertion</h3>
+          <p>Four cylinders of different sizes are randomly arranged in front of their slots. The robot must identify each cylinder by size and insert them in ascending order until all four are placed.</p>
+          <div class="metrics"><div><b>50.6%</b><small>progress (vs. 28.1)</small></div><div><b>2.0%</b><small>success (vs. 0.0)</small></div></div>
+        </div>
+      </article>
+
+      <article class="task" data-task="b">
+        <div class="vids">
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_towel_1.jpg" data-src="static/videos/4dwam_towel_1.mp4"></video>
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_towel_2.jpg" data-src="static/videos/4dwam_towel_2.mp4"></video>
+        </div>
+        <div class="body">
+          <span class="lab"><i style="background:#6f8fcf">b</i> Bimanual · 4D-WAM rollouts</span>
+          <h3>Towel Flattening</h3>
+          <p>A crumpled towel is placed on the table. The two arms grasp opposite ends, pull it open, and lay it flat on the tabletop.</p>
+          <div class="metrics"><div><b>7.5%</b><small>progress (vs. 2.5)</small></div><div><b>4.0%</b><small>success (vs. 0.0)</small></div></div>
+        </div>
+      </article>
+
+      <article class="task" data-task="c">
+        <div class="vids">
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_wrench_1.jpg" data-src="static/videos/4dwam_wrench_1.mp4"></video>
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_wrench_2.jpg" data-src="static/videos/4dwam_wrench_2.mp4"></video>
+        </div>
+        <div class="body">
+          <span class="lab"><i style="background:#2b3440">c</i> Single arm · 4D-WAM rollouts</span>
+          <h3>Toolbox Wrench Localization</h3>
+          <p>A tray sits next to a closed toolbox. The right arm opens the toolbox, inspects the items inside one by one, locates the wrench, and places it in the tray.</p>
+          <div class="metrics"><div><b>8.3%</b><small>progress (vs. 6.7)</small></div><div><b>12.0%</b><small>success (vs. 0.0)</small></div></div>
+        </div>
+      </article>
+
+      <article class="task" data-task="d">
+        <div class="vids">
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_light_1.jpg" data-src="static/videos/4dwam_light_1.mp4"></video>
+          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_light_2.jpg" data-src="static/videos/4dwam_light_2.mp4"></video>
+        </div>
+        <div class="body">
+          <span class="lab"><i style="background:#e3a21a">d</i> Single arm · 4D-WAM rollouts</span>
+          <h3>Rotating Light Pick-and-Place</h3>
+          <p>Several lights sit on a running turntable. While it rotates, the robot must identify the illuminated red light, grasp it, and place it on the table.</p>
+          <div class="metrics"><div><b>23.8%</b><small>progress (vs. 25.0)</small></div><div><b>4.0%</b><small>success (vs. 4.0)</small></div></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="rw-bottom">
+      <div>
+        <div class="figure">
+          <div class="strips">
+            <div class="row"><i style="background:#d8493a">a</i><img loading="lazy" src="static/images/task_a_cylinders.png" alt="Frame-by-frame sequence of the cylinder insertion task."></div>
+            <div class="row"><i style="background:#6f8fcf">b</i><img loading="lazy" src="static/images/task_b_towel.png" alt="Frame-by-frame sequence of the towel flattening task."></div>
+            <div class="row"><i style="background:#2b3440">c</i><img loading="lazy" src="static/images/task_c_wrench.png" alt="Frame-by-frame sequence of the toolbox wrench localization task."></div>
+            <div class="row"><i style="background:#e3a21a">d</i><img loading="lazy" src="static/images/task_d_light.png" alt="Frame-by-frame sequence of the rotating light pick-and-place task."></div>
+          </div>
+        </div>
+        <p class="caption"><b>Figure 7.</b> For each of the four tasks, the complete manipulation process from the primary camera, shown sequentially from left to right. (a) Pick up the four randomly placed cylinders and insert each one into the matching hole according to its size. (b) Flatten the towel. (c) Open the toolbox, check the items inside one by one, and find the wrench. (d) Identify and pick up the illuminated red light from the rotating turntable, then place it aside.</p>
+      </div>
+        <div class="tcard">
+          <h3>Real-world results</h3>
+          <div class="sub">Table 6 · 50 trials per task · Progress = fraction of sub-tasks completed · SR = success rate.</div>
+          <div class="twrap">
+          <table class="res">
+            <thead><tr><th></th><th colspan="2">Lingbot-VA</th><th colspan="2" class="divider">4D-WAM</th></tr>
+            <tr><th>Task</th><th>Prog.</th><th>SR</th><th class="divider">Prog.</th><th>SR</th></tr></thead>
+            <tbody>
+              <tr><td>(a) Cylinder</td><td>28.1</td><td>0.0</td><td class="divider"><b>50.6</b></td><td><b>2.0</b></td></tr>
+              <tr><td>(b) Towel</td><td>2.5</td><td>0.0</td><td class="divider"><b>7.5</b></td><td><b>4.0</b></td></tr>
+              <tr><td>(c) Wrench</td><td>6.7</td><td>0.0</td><td class="divider"><b>8.3</b></td><td><b>12.0</b></td></tr>
+              <tr><td>(d) Light</td><td><b>25.0</b></td><td>4.0</td><td class="divider">23.8</td><td>4.0</td></tr>
+              <tr class="ours"><td>Average</td><td>20.3</td><td>1.0</td><td class="divider"><b>31.8</b></td><td><b>5.5</b></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+<section id="bibtex">
+  <div class="narrow">
+    <div class="section-head"><span class="eyebrow">Citation</span><h2>BibTeX</h2></div>
+    <div class="bib">
+      <button class="copy" type="button" id="copyBib">Copy</button>
+<pre id="bibText">@article{yang2026fourdwam,
+  title   = {4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields},
+  author  = {Yang, Lishan and Song, Wenxuan and Wang, Xi and Sheng, Pingyue and Fang, Zheng and
+             Zhou, Ziyang and He, Junjie and Yan, Haodong and Chen, Jiayi and Sun, Nan and Sun, Qiao and
+             Liu, Lingqiao and Wang, Yan and Gao, Yuxiang and Dayoub, Feras and Li, Haoang},
+  journal = {arXiv preprint arXiv:2608.08023},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div>© 2026 the 4D-WAM authors. Figures and videos from the paper; reproduced under the authors' permission.</div>
+    <div><a href="https://github.com/lishanyqy/4DWAM" target="_blank" rel="noopener">github.com/lishanyqy/4DWAM</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2608.08023" target="_blank" rel="noopener">arXiv:2608.08023</a></div>
+  </div>
+</footer>
+
+<script src="static/js/main.js"></script>
+</body>
+</html>
