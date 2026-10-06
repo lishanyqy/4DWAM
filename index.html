@@ -377,10 +377,9 @@
       <article class="task" data-task="a">
         <div class="vids">
           <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_size_1.jpg" data-src="static/videos/4dwam_size_1.mp4"></video>
-          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_size_2.jpg" data-src="static/videos/4dwam_size_2.mp4"></video>
         </div>
         <div class="body">
-          <span class="lab"><i style="background:#d8493a">a</i> Bimanual · 4D-WAM rollouts</span>
+          <span class="lab"><i style="background:#d8493a">a</i> Bimanual · 4D-WAM rollout</span>
           <h3>Cylinder Insertion</h3>
           <p>Four cylinders of different sizes are randomly arranged in front of their slots. The robot must identify each cylinder by size and insert them in ascending order until all four are placed.</p>
           <div class="metrics"><div><b>50.6%</b><small>progress (vs. 28.1)</small></div><div><b>2.0%</b><small>success (vs. 0.0)</small></div></div>
@@ -390,10 +389,9 @@
       <article class="task" data-task="b">
         <div class="vids">
           <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_towel_1.jpg" data-src="static/videos/4dwam_towel_1.mp4"></video>
-          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_towel_2.jpg" data-src="static/videos/4dwam_towel_2.mp4"></video>
         </div>
         <div class="body">
-          <span class="lab"><i style="background:#6f8fcf">b</i> Bimanual · 4D-WAM rollouts</span>
+          <span class="lab"><i style="background:#6f8fcf">b</i> Bimanual · 4D-WAM rollout</span>
           <h3>Towel Flattening</h3>
           <p>A crumpled towel is placed on the table. The two arms grasp opposite ends, pull it open, and lay it flat on the tabletop.</p>
           <div class="metrics"><div><b>7.5%</b><small>progress (vs. 2.5)</small></div><div><b>4.0%</b><small>success (vs. 0.0)</small></div></div>
@@ -403,10 +401,9 @@
       <article class="task" data-task="c">
         <div class="vids">
           <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_wrench_1.jpg" data-src="static/videos/4dwam_wrench_1.mp4"></video>
-          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_wrench_2.jpg" data-src="static/videos/4dwam_wrench_2.mp4"></video>
         </div>
         <div class="body">
-          <span class="lab"><i style="background:#2b3440">c</i> Single arm · 4D-WAM rollouts</span>
+          <span class="lab"><i style="background:#2b3440">c</i> Single arm · 4D-WAM rollout</span>
           <h3>Toolbox Wrench Localization</h3>
           <p>A tray sits next to a closed toolbox. The right arm opens the toolbox, inspects the items inside one by one, locates the wrench, and places it in the tray.</p>
           <div class="metrics"><div><b>8.3%</b><small>progress (vs. 6.7)</small></div><div><b>12.0%</b><small>success (vs. 0.0)</small></div></div>
@@ -416,10 +413,9 @@
       <article class="task" data-task="d">
         <div class="vids">
           <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_light_1.jpg" data-src="static/videos/4dwam_light_1.mp4"></video>
-          <video muted loop playsinline preload="none" poster="static/images/poster_4dwam_light_2.jpg" data-src="static/videos/4dwam_light_2.mp4"></video>
         </div>
         <div class="body">
-          <span class="lab"><i style="background:#e3a21a">d</i> Single arm · 4D-WAM rollouts</span>
+          <span class="lab"><i style="background:#e3a21a">d</i> Single arm · 4D-WAM rollout</span>
           <h3>Rotating Light Pick-and-Place</h3>
           <p>Several lights sit on a running turntable. While it rotates, the robot must identify the illuminated red light, grasp it, and place it on the table.</p>
           <div class="metrics"><div><b>23.8%</b><small>progress (vs. 25.0)</small></div><div><b>4.0%</b><small>success (vs. 4.0)</small></div></div>
@@ -428,18 +424,7 @@
     </div>
 
     <div class="rw-bottom">
-      <div>
-        <div class="figure">
-          <div class="strips">
-            <div class="row"><i style="background:#d8493a">a</i><img loading="lazy" src="static/images/task_a_cylinders.png" alt="Frame-by-frame sequence of the cylinder insertion task."></div>
-            <div class="row"><i style="background:#6f8fcf">b</i><img loading="lazy" src="static/images/task_b_towel.png" alt="Frame-by-frame sequence of the towel flattening task."></div>
-            <div class="row"><i style="background:#2b3440">c</i><img loading="lazy" src="static/images/task_c_wrench.png" alt="Frame-by-frame sequence of the toolbox wrench localization task."></div>
-            <div class="row"><i style="background:#e3a21a">d</i><img loading="lazy" src="static/images/task_d_light.png" alt="Frame-by-frame sequence of the rotating light pick-and-place task."></div>
-          </div>
-        </div>
-        <p class="caption"><b>Figure 7.</b> For each of the four tasks, the complete manipulation process from the primary camera, shown sequentially from left to right. (a) Pick up the four randomly placed cylinders and insert each one into the matching hole according to its size. (b) Flatten the towel. (c) Open the toolbox, check the items inside one by one, and find the wrench. (d) Identify and pick up the illuminated red light from the rotating turntable, then place it aside.</p>
-      </div>
-        <div class="tcard">
+      <div class="tcard">
           <h3>Real-world results</h3>
           <div class="sub">Table 6 · 50 trials per task · Progress = fraction of sub-tasks completed · SR = success rate.</div>
           <div class="twrap">
