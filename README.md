@@ -25,7 +25,7 @@ This directory contains the supplementary material for the 4D-WAM paper. It is o
 4D-WAM augments World Action Models (WAMs) with explicit spatiotemporal awareness. Instead of relying only on video latents and action tokens, it introduces trajectory fields that describe how points move through space and time, giving the model a structured signal for object motion, scene dynamics, and action-conditioned change.
 
 <p align="center">
-  <img src="./assets/overall.png" alt="Light-WAM overview" width="80%">
+  <img src="./assets/overview.svg" alt="Light-WAM overview" width="80%">
 </p>
 
 The method is designed as a lightweight post-training extension for existing WAM backbones. In this repository, 4D-WAM is implemented on top of FastWAM and Lingbot-VA, with preprocessing, training, and evaluation utilities for adding trajectory-field supervision while preserving the original model workflows.
